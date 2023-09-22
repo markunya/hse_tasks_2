@@ -10,7 +10,7 @@ private:
 
     struct Buffer {
         int* data;
-        bool have_data;
+        bool have_data = false;
 
         Buffer() = default;
 
