@@ -9,7 +9,7 @@ private:
     static const size_t kBufferSize = 128;
 
     struct Buffer {
-        int* data;
+        int* data = nullptr;
         bool have_data = false;
 
         Buffer() = default;
@@ -47,9 +47,7 @@ public:
     Deque() = default;
 
     Deque(const Deque& other)
-        : capacity_(other.capacity_), front_(std::make_pair(0, 0)), back_(std::make_pair(0, 0)) {
-        delete[] data_;
-        data_ = new Buffer[capacity_];
+        : capacity_(other.capacity_), front_(std::make_pair(0, 0)), back_(std::make_pair(0, 0)), data_(new Buffer[other.capacity_]) {
         for (size_t i = 0; i < other.size_; ++i) {
             PushBack(other[i]);
         }
@@ -58,6 +56,7 @@ public:
     Deque(Deque&& other) {
         Swap(other);
     }
+
     explicit Deque(size_t size) {
         capacity_ = ((size + kBufferSize - 1) / kBufferSize);
         data_ = new Buffer[capacity_];
