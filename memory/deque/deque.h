@@ -10,7 +10,7 @@ private:
 
     struct Buffer {
         int* data;
-        bool have_data;
+        bool have_data = false;
 
         Buffer() = default;
 
@@ -216,5 +216,31 @@ private:
     std::pair<size_t, size_t> back_;
     Buffer* data_ = nullptr;
 
-    void Reallocate();
+    void Reallocate() {
+        if (capacity_ == 0) {
+            capacity_ = 1;
+            data_ = new Buffer[1];
+            return;
+        }
+        size_t new_capacity = capacity_ * 2;
+        Buffer* new_data = new Buffer[new_capacity];
+        size_t current_index = 0;
+        std::pair<size_t, size_t> new_front = std::make_pair(0, front_.second);
+
+        for (; current_index + front_.first < capacity_; ++current_index) {
+            new_data[current_index] = data_[front_.first + current_index];
+        }
+        for (size_t i = 0; i < back_.first; ++i) {
+            new_data[current_index + i] = data_[i];
+        }
+        std::pair<size_t, size_t> new_back = std::make_pair(current_index + back_.first, back_.second);
+        current_index += back_.first;
+        if (back_.second > 0 && front_.first != back_.first) {
+            new_data[current_index] = data_[back_.first];
+        }
+        capacity_ = new_capacity;
+        front_ = new_front;
+        back_ = new_back;
+        data_ = new_data;
+    }
 };
