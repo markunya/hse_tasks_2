@@ -19,7 +19,7 @@ private:
         std::string key;
         Node* next;
         Node* prev;
-        Node(std::string  val, std::string key);
+        Node(std::string val, std::string key);
     };
 
     size_t capacity_;
