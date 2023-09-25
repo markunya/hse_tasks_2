@@ -10,48 +10,203 @@ private:
 
     struct Buffer {
         int* data;
-        bool have_data = false;
+        bool have_data;
 
         Buffer() = default;
 
-        void Alloc();
+        void Alloc() {
+            if (have_data) {
+                return;
+            }
+            data = new int[kBufferSize];
+            for (size_t i = 0; i < kBufferSize; ++i) {
+                data[i] = 0;
+            }
+            have_data = true;
+        }
 
-        void Dealloc();
 
-        int& operator[](size_t index);
+        void Dealloc() {
+            if (!have_data) {
+                return;
+            }
+            delete[] data;
+            have_data = false;
+        }
 
-        int operator[](size_t index) const;
+        int& operator[](size_t index) {
+            return data[index];
+        }
+
+        int operator[](size_t index) const {
+            return data[index];
+        }
     };
 
 public:
     Deque() = default;
-    Deque(const Deque& other);
-    Deque(Deque&& other);
-    explicit Deque(size_t size);
 
-    Deque(std::initializer_list<int> list);
+    Deque(const Deque& other)
+        : capacity_(other.capacity_), front_(std::make_pair(0, 0)), back_(std::make_pair(0, 0)) {
+        data_ = new Buffer[capacity_];
+        for (size_t i = 0; i < other.size_; ++i) {
+            PushBack(other[i]);
+        }
+    }
 
-    Deque& operator=(Deque other);
+    Deque(Deque&& other) {
+        Swap(other);
+    }
+    explicit Deque(size_t size) {
+        capacity_ = ((size + kBufferSize - 1) / kBufferSize);
+        data_ = new Buffer[capacity_];
+        size_ = 0;
+        front_ = std::make_pair(0, 0);
+        back_ = std::make_pair(0, 0);
+        for (size_t i = 0; i < size; ++i) {
+            PushBack(0);
+        }
+    }
 
-    void Swap(Deque& other);
+    Deque(std::initializer_list<int> list) {
+        capacity_ = ((list.size() + kBufferSize - 1) / kBufferSize);
+        data_ = new Buffer[capacity_];
+        front_ = std::make_pair(0, 0);
+        back_ = std::make_pair(0, 0);
+        for (auto i : list) {
+            PushBack(i);
+        }
+    }
 
-    void PushBack(int value);
+    Deque& operator=(Deque other) {
+        Swap(other);
+        return *this;
+    }
 
-    void PopBack();
+    void Swap(Deque& other) {
+        std::swap(size_, other.size_);
+        std::swap(capacity_, other.capacity_);
+        std::swap(amount_of_buffers_, other.amount_of_buffers_);
+        std::swap(front_, other.front_);
+        std::swap(back_, other.back_);
+        std::swap(data_, other.data_);
+    }
 
-    void PushFront(int value);
+    void PushBack(int value) {
+        if (back_.second == 0 && amount_of_buffers_ == capacity_) {
+            Reallocate();
+        }
+        if (!data_[back_.first].have_data) {
+            data_[back_.first].Alloc();
+            ++amount_of_buffers_;
+        }
+        data_[back_.first][back_.second] = value;
+        if (back_.second == kBufferSize - 1) {
+            back_.second = 0;
+            if (back_.first == capacity_ - 1) {
+                back_.first = 0;
+            } else {
+                ++back_.first;
+            }
+        } else {
+            ++back_.second;
+        }
+        ++size_;
+    }
 
-    void PopFront();
 
-    int& operator[](size_t ind);
+    void PopBack() {
+        if (back_.second == 1) {
+            data_[back_.first].Dealloc();
+            --amount_of_buffers_;
+        }
+        if (back_.second == 0) {
+            back_.second = kBufferSize - 1;
+            if (back_.first == 0) {
+                back_.first = capacity_ - 1;
+            } else {
+                --back_.first;
+            }
+        } else {
+            --back_.second;
+        }
+        --size_;
+    }
 
-    int operator[](size_t ind) const;
+    void PushFront(int value) {
+        if (front_.second == 0) {
+            if (amount_of_buffers_ == capacity_) {
+                Reallocate();
+            }
+            front_.second = kBufferSize - 1;
+            if (front_.first == 0) {
+                front_.first = capacity_ - 1;
+            } else {
+                --front_.first;
+            }
+            data_[front_.first].Alloc();
+            ++amount_of_buffers_;
+        } else {
+            --front_.second;
+        }
+        data_[front_.first][front_.second] = value;
+        ++size_;
+    }
 
-    size_t Size() const;
+    void PopFront() {
+        if (front_.second == kBufferSize - 1) {
+            data_[front_.first].Dealloc();
+            --amount_of_buffers_;
+            front_.second = 0;
+            if (front_.first == capacity_ - 1) {
+                front_.first = 0;
+            } else {
+                ++front_.first;
+            }
+        } else {
+            ++front_.second;
+        }
+        --size_;
+    }
 
-    void Clear();
 
-    ~Deque();
+    int& operator[](size_t ind) {
+        if (ind <= kBufferSize - front_.second - 1) {
+            return data_[front_.first][front_.second + ind];
+        }
+        ind -= kBufferSize - front_.second;
+        return data_[(front_.first + 1 + ind / 128) % capacity_][ind % 128];
+    }
+
+
+    int operator[](size_t ind) const {
+        if (ind <= kBufferSize - front_.second - 1) {
+            return data_[front_.first][front_.second + ind];
+        }
+        ind -= kBufferSize - front_.second;
+        return data_[(front_.first + 1 + ind / 128) % capacity_][ind % 128];
+    }
+
+
+    size_t Size() const {
+        return size_;
+    }
+
+    void Clear() {
+        for (size_t i = 0; i < capacity_; ++i) {
+            data_[i].Dealloc();
+        }
+        amount_of_buffers_ = 0;
+        size_ = 0;
+        front_ = std::make_pair(0, 0);
+        back_ = std::make_pair(0, 0);
+    }
+
+
+    ~Deque() {
+        Clear();
+        delete[] data_;
+    }
 
 private:
     size_t size_ = 0;
