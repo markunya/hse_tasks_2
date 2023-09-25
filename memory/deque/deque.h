@@ -3,6 +3,7 @@
 #include <initializer_list>
 #include <algorithm>
 #include <deque>
+#include <iostream>
 
 class Deque {
 private:
@@ -219,6 +220,7 @@ private:
     void Reallocate() {
         if (capacity_ == 0) {
             capacity_ = 1;
+            delete[] data_;
             data_ = new Buffer[1];
             return;
         }
