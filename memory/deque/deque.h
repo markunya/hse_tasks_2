@@ -5,57 +5,61 @@
 #include <deque>
 
 class Deque {
+private:
+    static const size_t kBufferSize = 128;
+
+    struct Buffer {
+        int* data;
+        bool have_data = false;
+
+        Buffer() = default;
+
+        void Alloc();
+
+        void Dealloc();
+
+        int& operator[](size_t index);
+
+        int operator[](size_t index) const;
+    };
+
 public:
     Deque() = default;
-    Deque(const Deque& rhs) = default;
-    Deque(Deque&& rhs) = default;
-    explicit Deque(size_t size) : data_(size) {
-    }
+    Deque(const Deque& other);
+    Deque(Deque&& other);
+    explicit Deque(size_t size);
 
-    Deque(std::initializer_list<int> list) : data_(list) {
-    }
+    Deque(std::initializer_list<int> list);
 
-    Deque& operator=(Deque rhs) {
-        Swap(rhs);
-        return *this;
-    }
+    Deque& operator=(Deque other);
 
-    void Swap(Deque& rhs) {
-        std::swap(data_, rhs.data_);
-    }
+    void Swap(Deque& other);
 
-    void PushBack(int value) {
-        data_.push_back(value);
-    }
+    void PushBack(int value);
 
-    void PopBack() {
-        data_.pop_back();
-    }
+    void PopBack();
 
-    void PushFront(int value) {
-        data_.push_front(value);
-    }
+    void PushFront(int value);
 
-    void PopFront() {
-        data_.pop_front();
-    }
+    void PopFront();
 
-    int& operator[](size_t ind) {
-        return data_[ind];
-    }
+    int& operator[](size_t ind);
 
-    int operator[](size_t ind) const {
-        return data_[ind];
-    }
+    int operator[](size_t ind) const;
 
-    size_t Size() const {
-        return data_.size();
-    }
+    size_t Size() const;
 
-    void Clear() {
-        data_.clear();
-    }
+    void Clear();
+
+    ~Deque();
 
 private:
-    std::deque<int> data_;
+    size_t size_ = 0;
+    size_t capacity_ = 0;
+    size_t amount_of_buffers_ = 0;
+    std::pair<size_t, size_t> front_;
+    std::pair<size_t, size_t> back_;
+    Buffer* data_ = nullptr;
+
+    void Reallocate();
 };
