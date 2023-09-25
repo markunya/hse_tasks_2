@@ -48,6 +48,7 @@ public:
 
     Deque(const Deque& other)
         : capacity_(other.capacity_), front_(std::make_pair(0, 0)), back_(std::make_pair(0, 0)) {
+        delete[] data_;
         data_ = new Buffer[capacity_];
         for (size_t i = 0; i < other.size_; ++i) {
             PushBack(other[i]);
