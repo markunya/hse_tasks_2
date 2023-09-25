@@ -9,13 +9,14 @@ using std::string;
 
 std::vector<std::unique_ptr<string>> Duplicate(const std::vector<std::shared_ptr<string>>& items) {
     std::vector<std::unique_ptr<string>> result;
-    for (const auto & item : items) {
+    for (const auto& item : items) {
         result.emplace_back(std::make_unique<string>(*item));
     }
     return result;
 }
 
-std::vector<std::shared_ptr<string>> DeDuplicate(const std::vector<std::unique_ptr<string>>& items) {
+std::vector<std::shared_ptr<string>> DeDuplicate(
+    const std::vector<std::unique_ptr<string>>& items) {
     std::unordered_map<std::string, std::shared_ptr<string>> m;
     std::vector<std::shared_ptr<string>> result;
     for (const auto& item : items) {
