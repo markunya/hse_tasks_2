@@ -63,6 +63,6 @@ LruCache::~LruCache() {
     delete finish_;
 }
 
-LruCache::Node::Node(std::string  val, std::string  key)
+LruCache::Node::Node(std::string val, std::string key)
     : val(std::move(val)), key(std::move(key)), next(nullptr), prev(nullptr) {
 }
