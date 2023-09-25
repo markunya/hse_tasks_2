@@ -26,7 +26,6 @@ private:
             have_data = true;
         }
 
-
         void Dealloc() {
             if (!have_data) {
                 return;
@@ -48,7 +47,10 @@ public:
     Deque() = default;
 
     Deque(const Deque& other)
-        : capacity_(other.capacity_), front_(std::make_pair(0, 0)), back_(std::make_pair(0, 0)), data_(new Buffer[other.capacity_]) {
+        : capacity_(other.capacity_),
+          front_(std::make_pair(0, 0)),
+          back_(std::make_pair(0, 0)),
+          data_(new Buffer[other.capacity_]) {
         for (size_t i = 0; i < other.size_; ++i) {
             PushBack(other[i]);
         }
@@ -115,7 +117,6 @@ public:
         ++size_;
     }
 
-
     void PopBack() {
         if (back_.second == 1) {
             data_[back_.first].Dealloc();
@@ -170,7 +171,6 @@ public:
         --size_;
     }
 
-
     int& operator[](size_t ind) {
         if (ind <= kBufferSize - front_.second - 1) {
             return data_[front_.first][front_.second + ind];
@@ -179,7 +179,6 @@ public:
         return data_[(front_.first + 1 + ind / 128) % capacity_][ind % 128];
     }
 
-
     int operator[](size_t ind) const {
         if (ind <= kBufferSize - front_.second - 1) {
             return data_[front_.first][front_.second + ind];
@@ -187,7 +186,6 @@ public:
         ind -= kBufferSize - front_.second;
         return data_[(front_.first + 1 + ind / 128) % capacity_][ind % 128];
     }
-
 
     size_t Size() const {
         return size_;
@@ -202,7 +200,6 @@ public:
         front_ = std::make_pair(0, 0);
         back_ = std::make_pair(0, 0);
     }
-
 
     ~Deque() {
         Clear();
@@ -234,7 +231,8 @@ private:
         for (size_t i = 0; i < back_.first; ++i) {
             new_data[current_index + i] = data_[i];
         }
-        std::pair<size_t, size_t> new_back = std::make_pair(current_index + back_.first, back_.second);
+        std::pair<size_t, size_t> new_back =
+            std::make_pair(current_index + back_.first, back_.second);
         current_index += back_.first;
         if (back_.second > 0 && front_.first != back_.first) {
             new_data[current_index] = data_[back_.first];
