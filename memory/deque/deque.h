@@ -224,12 +224,8 @@ private:
         }
         size_t new_capacity = capacity_ * 2;
         Buffer* new_data = new Buffer[new_capacity];
-        for (size_t i = 0; i < new_capacity; ++i) {
-            new_data[i].Dealloc();
-        }
         size_t current_index = 0;
         std::pair<size_t, size_t> new_front = std::make_pair(0, front_.second);
-
         for (; current_index + front_.first < capacity_; ++current_index) {
             new_data[current_index] = data_[front_.first + current_index];
         }
@@ -244,6 +240,7 @@ private:
         capacity_ = new_capacity;
         front_ = new_front;
         back_ = new_back;
+        delete[] data_;
         data_ = new_data;
     }
 };
