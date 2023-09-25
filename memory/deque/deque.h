@@ -224,6 +224,9 @@ private:
         }
         size_t new_capacity = capacity_ * 2;
         Buffer* new_data = new Buffer[new_capacity];
+        for (size_t i = 0; i < new_capacity; ++i) {
+            new_data[i].Dealloc();
+        }
         size_t current_index = 0;
         std::pair<size_t, size_t> new_front = std::make_pair(0, front_.second);
 
