@@ -11,6 +11,8 @@ public:
 
     bool Get(const std::string& key, std::string* value);
 
+    ~LruCache();
+
 private:
     struct Node {
         std::string val;

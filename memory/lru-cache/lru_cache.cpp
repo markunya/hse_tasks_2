@@ -53,6 +53,14 @@ bool LruCache::Get(const std::string& key, std::string* value) {
     }
     return false;
 }
+LruCache::~LruCache() {
+    Node* current = start_->next;
+    while (current != nullptr) {
+        delete current->prev;
+        current = current->next;
+    }
+    delete finish_;
+}
 
 LruCache::Node::Node(std::string  val, std::string  key) : val(std::move(val)),
                                                            key(std::move(key)),
