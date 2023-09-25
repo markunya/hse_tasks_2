@@ -1,7 +1,7 @@
 #include "lru_cache.h"
 
 LruCache::LruCache(size_t max_size)
-      : capacity_(max_size), size_(0), start_(new Node("", "")), finish_(new Node("", "")) {
+    : capacity_(max_size), size_(0), start_(new Node("", "")), finish_(new Node("", "")) {
     start_->next = finish_;
     finish_->prev = start_;
 }
@@ -64,5 +64,5 @@ LruCache::~LruCache() {
 }
 
 LruCache::Node::Node(std::string  val, std::string  key)
-      : val(std::move(val)), key(std::move(key)), next(nullptr), prev(nullptr) {
+    : val(std::move(val)), key(std::move(key)), next(nullptr), prev(nullptr) {
 }
