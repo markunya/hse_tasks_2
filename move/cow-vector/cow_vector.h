@@ -81,7 +81,7 @@ private:
         Data() : counter_of_refs(1) {}
     };
 
-    Data* data_;
+    Data* data_ = nullptr;
 
     void Reallocate() {
         if (data_->counter_of_refs > 1) {
