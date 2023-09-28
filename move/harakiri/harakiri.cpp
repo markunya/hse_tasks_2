@@ -1,7 +1,9 @@
 #include "harakiri.h"
 
 std::string AwesomeCallback::operator()() const&& {
-    return std::string(str_);
+    std::string t = std::move(str_);
+    delete this;
+    return t;
 }
 
 
