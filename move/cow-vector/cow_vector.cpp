@@ -1,6 +1,7 @@
 #include "cow_vector.h"
 
-COWVector::COWVector()  : data_(new Data()) {}
+COWVector::COWVector() : data_(new Data()) {
+}
 
 COWVector::~COWVector() {
     --data_->counter_of_refs;
@@ -80,4 +81,5 @@ void COWVector::Reallocate() {
     }
 }
 
-COWVector::Data::Data() : counter_of_refs(1) {}
+COWVector::Data::Data() : counter_of_refs(1) {
+}
