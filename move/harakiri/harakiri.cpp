@@ -5,5 +5,3 @@ std::string AwesomeCallback::operator()() const&& {
     delete this;
     return t;
 }
-
-
