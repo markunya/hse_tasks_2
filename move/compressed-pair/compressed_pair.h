@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <utility>
 
-template<typename T, bool is_first, bool can_use_ebo = std::is_empty_v<T> && !std::is_final_v<T>>
+template <typename T, bool is_first, bool can_use_ebo = std::is_empty_v<T> && !std::is_final_v<T>>
 struct CompressedPairMember {
     CompressedPairMember() : obj() {
     }
@@ -26,7 +26,7 @@ struct CompressedPairMember {
     T obj;
 };
 
-template<typename T, bool is_first>
+template <typename T, bool is_first>
 struct CompressedPairMember<T, is_first, true> : public T {
     CompressedPairMember() = default;
 
@@ -44,7 +44,6 @@ struct CompressedPairMember<T, is_first, true> : public T {
         return *this;
     }
 };
-
 
 // Me think, why waste time write lot code, when few code do trick.
 template <typename F, typename S>
