@@ -180,11 +180,11 @@ public:
     }
 
     Iterator Begin() {
-        return IteratorTo(static_cast<T*>(dummy_.next_));
+        return Iterator(dummy_.next_);
     }
 
     Iterator End() {
-        return IteratorTo(static_cast<T*>(&dummy_));
+        return Iterator(&dummy_);
     }
 
     // complexity of this function must be O(1)
