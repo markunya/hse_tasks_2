@@ -6,7 +6,8 @@
 
 template<typename T, bool is_first, bool can_use_ebo = std::is_empty_v<T> && !std::is_final_v<T>>
 struct CompressedPairMember {
-    CompressedPairMember() = default;
+    CompressedPairMember() : obj() {
+    }
 
     CompressedPairMember(const T& obj) : obj(obj) {
     }
