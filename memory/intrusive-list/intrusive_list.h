@@ -180,7 +180,7 @@ public:
     }
 
     Iterator Begin() {
-            IteratorTo(static_cast<T*>(dummy_.next_));
+        return IteratorTo(static_cast<T*>(dummy_.next_));
     }
 
     Iterator End() {
