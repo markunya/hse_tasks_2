@@ -41,7 +41,8 @@ class List {
 public:
     class Iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
     public:
-        Iterator(ListHook* h) : current_(h) {}
+        Iterator(ListHook* h) : current_(h) {
+        }
 
         Iterator& operator++() {
             current_ = current_->next_;
@@ -126,7 +127,6 @@ public:
         }
         return sz;
     }
-    
     void PushBack(T* elem) {
         if (IsEmpty()) {
             dummy_.prev_ = elem;
