@@ -29,7 +29,10 @@ template<typename T, bool is_first>
 struct CompressedPairMember<T, is_first, true> : public T {
     CompressedPairMember() = default;
 
-    CompressedPairMember(T obj) {
+    CompressedPairMember(const T& obj) {
+    }
+
+    CompressedPairMember(T&& obj) {
     }
 
     T& GetObject() {
