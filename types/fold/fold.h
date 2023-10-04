@@ -1,5 +1,8 @@
 #pragma once
 
+
+#include <vector>
+
 struct Sum {
     Sum() = default;
     template <typename T, typename... Args>
