@@ -2,7 +2,7 @@
 
 struct Sum {
     Sum() = default;
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void operator()(T& res, const Args&... args) {
         ((res += args), ...);
     }
@@ -10,7 +10,7 @@ struct Sum {
 
 struct Prod {
     Prod() = default;
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void operator()(T& res, const Args&... args) {
         ((res *= args), ...);
     }
@@ -18,7 +18,7 @@ struct Prod {
 
 struct Concat {
     Concat() = default;
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     void operator()(std::vector<T>& res, Args&... args) {
         (res.insert(res.end(), args.begin(), args.end()), ...);
     }
