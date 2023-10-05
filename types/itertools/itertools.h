@@ -122,14 +122,11 @@ private:
 
 template <typename T>
 auto Group(const T& sequence) {
-    if (sequence.empty()) {
-        return IteratorRange(GroupIterator(IteratorRange(sequence.begin(), sequence.begin()), sequence.end()),
-                             GroupIterator(IteratorRange(sequence.begin(), sequence.begin()), sequence.end()));
-    }
     auto it = sequence.begin();
     while (it != sequence.end() && *it == *sequence.begin()) {
         ++it;
     }
-    return IteratorRange(GroupIterator(IteratorRange(sequence.begin(), it), sequence.end()),
-                         GroupIterator(IteratorRange(sequence.end(), sequence.end()), sequence.end()));
+    return IteratorRange(
+        GroupIterator(IteratorRange(sequence.begin(), it), sequence.end()),
+        GroupIterator(IteratorRange(sequence.end(), sequence.end()), sequence.end()));
 }
