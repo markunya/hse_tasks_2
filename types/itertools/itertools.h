@@ -1,5 +1,8 @@
 #pragma once
 
+#include <utility>
+#include <functional>
+
 template <class Iterator>
 class IteratorRange {
 public:
