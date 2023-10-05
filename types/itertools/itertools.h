@@ -95,11 +95,15 @@ auto Zip(const T& first, const U& second) {
 template <typename T>
 class GroupIterator {
 public:
-    GroupIterator(const IteratorRange<T>& x) : x_(x) {
+    GroupIterator(const IteratorRange<T>& x, T end) : x_(x), end_(end) {
     }
 
     GroupIterator operator++() {
         auto it = x_.end();
+        if (it == end_) {
+            x_ = IteratorRange<T>(end_, end_);
+            return *this;
+        }
         while (*it == *x_.end()) {
             ++it;
         }
@@ -117,18 +121,19 @@ public:
 
 private:
     IteratorRange<T> x_;
+    T end_;
 };
 
 template <typename T>
 auto Group(const T& sequence) {
     if (sequence.empty()) {
-        return IteratorRange(GroupIterator(IteratorRange(sequence.begin(), sequence.begin())),
-                             GroupIterator(IteratorRange(sequence.begin(), sequence.begin())));
+        return IteratorRange(GroupIterator(IteratorRange(sequence.begin(), sequence.begin()), sequence.end()),
+                             GroupIterator(IteratorRange(sequence.begin(), sequence.begin()), sequence.end()));
     }
     auto it = sequence.begin();
     while (*it == *sequence.begin()) {
         ++it;
     }
-    return IteratorRange(GroupIterator(IteratorRange(sequence.begin(), it)),
-                         GroupIterator(IteratorRange(sequence.end(), sequence.end())));
+    return IteratorRange(GroupIterator(IteratorRange(sequence.begin(), it), sequence.end()),
+                         GroupIterator(IteratorRange(sequence.end(), sequence.end()), sequence.end()));
 }
