@@ -95,16 +95,12 @@ auto Zip(const T& first, const U& second) {
 template <typename T>
 class GroupIterator {
 public:
-    GroupIterator(const IteratorRange<T>& x, T end) : x_(x), end_(end) {
+    GroupIterator(const IteratorRange<T>& x, const T& end) : x_(x), end_(end) {
     }
 
     GroupIterator operator++() {
         auto it = x_.end();
-        if (it == end_) {
-            x_ = IteratorRange<T>(end_, end_);
-            return *this;
-        }
-        while (*it == *x_.end()) {
+        while (it != end_ && *it == *x_.end()) {
             ++it;
         }
         x_ = IteratorRange(x_.end(), it);
