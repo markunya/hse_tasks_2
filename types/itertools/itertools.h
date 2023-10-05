@@ -127,7 +127,7 @@ auto Group(const T& sequence) {
                              GroupIterator(IteratorRange(sequence.begin(), sequence.begin()), sequence.end()));
     }
     auto it = sequence.begin();
-    while (*it == *sequence.begin()) {
+    while (it != sequence.end() && *it == *sequence.begin()) {
         ++it;
     }
     return IteratorRange(GroupIterator(IteratorRange(sequence.begin(), it), sequence.end()),
