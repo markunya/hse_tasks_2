@@ -12,6 +12,7 @@ struct Slug {
     }
     template <typename U>
     Slug& operator=(Slug<U>&&) {
+        return *this;
     }
     void operator()(T* ptr) {
         delete ptr;
@@ -26,6 +27,7 @@ struct Slug<T[]> {
     }
     template <typename U>
     Slug& operator=(Slug<U>&&) {
+        return *this;
     }
     void operator()(T* ptr) {
         delete[] ptr;
