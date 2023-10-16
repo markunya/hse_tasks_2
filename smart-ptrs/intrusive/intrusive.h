@@ -10,9 +10,6 @@ public:
     }
 
     size_t DecRef() {
-        if (count_ == 0) {
-            return count_;
-        }
         return --count_;
     }
 
@@ -59,7 +56,6 @@ public:
     }
 
     RefCounted& operator=(const RefCounted& other) {
-        counter_ = other.counter_;
         return *this;
     }
 
