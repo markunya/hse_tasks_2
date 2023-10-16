@@ -101,7 +101,11 @@ public:
 
     // `operator=`-s
     IntrusivePtr& operator=(const IntrusivePtr& other) {
-        if (other && this != &other) {
+        if (this == &other) {
+            return *this;
+        }
+        Reset();
+        if (other) {
             obj_ = other.obj_;
             obj_->IncRef();
         }
