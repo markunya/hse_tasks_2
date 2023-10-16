@@ -10,11 +10,19 @@ public:
     }
 
     size_t DecRef() {
+        if (count_ == 0) {
+            return count_;
+        }
         return --count_;
     }
 
     size_t RefCount() const {
         return count_;
+    }
+
+    SimpleCounter& operator=(const SimpleCounter& other) {
+        count_ = other.count_;
+        return *this;
     }
 
 private:
@@ -48,6 +56,11 @@ public:
     // Get current counter value (the number of strong references).
     size_t RefCount() const {
         return counter_.RefCount();
+    }
+
+    RefCounted& operator=(const RefCounted& other) {
+        counter_ = other.counter_;
+        return *this;
     }
 
 private:
