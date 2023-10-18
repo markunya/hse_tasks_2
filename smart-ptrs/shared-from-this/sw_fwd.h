@@ -104,4 +104,3 @@ class SharedPtr;
 
 template <typename T>
 class WeakPtr;
-

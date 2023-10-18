@@ -23,7 +23,7 @@ class SharedPtr {
     template <typename Y>
     friend class EnableSharedFromThis;
 
-    public:
+public:
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
 
@@ -98,7 +98,6 @@ class SharedPtr {
             InitWeakThis(ptr_);
         }
     }
-
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // `operator=`-s
@@ -224,7 +223,6 @@ private:
     void InitWeakThis(EnableSharedFromThis<Y>* e) {
         e->self_ = *this;
     }
-
 };
 
 template <typename T, typename U>
@@ -239,8 +237,6 @@ SharedPtr<T> MakeShared(Args&&... args) {
         new ObjectWithControlBlock<T>(std::forward<Args>(args)...);
     return SharedPtr<T>(obj_with_block->GetPointer(), obj_with_block);
 }
-
-
 
 // Look for usage examples in tests
 
