@@ -3,6 +3,7 @@
 #include <exception>
 #include <stdexcept>
 #include <cstring>
+#include <optional>
 
 template <class T>
 class Try {
