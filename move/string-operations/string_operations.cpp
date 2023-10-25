@@ -3,7 +3,6 @@
 #include <string>
 #include <unistd.h>
 #include <fcntl.h>
-#include <algorithm>
 
 bool StartsWith(std::string_view string, std::string_view text) {
     if (text.size() > string.size()) {

@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <cstring>
+#include <algorithm>
 
 bool StartsWith(std::string_view string, std::string_view text);
 
