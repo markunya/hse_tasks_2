@@ -1,5 +1,6 @@
 #pragma once
 
+#include <typeinfo>
 class Any {
 public:
     Any() = default;
