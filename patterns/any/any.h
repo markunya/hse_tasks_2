@@ -1,6 +1,8 @@
 #pragma once
 
 #include <typeinfo>
+#include <algorithm>
+
 class Any {
 public:
     Any() = default;
