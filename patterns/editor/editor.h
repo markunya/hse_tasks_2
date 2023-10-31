@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <stack>
+#include <vector>
 
 class Editor {
 public:
