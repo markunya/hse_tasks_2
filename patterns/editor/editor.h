@@ -109,7 +109,7 @@ public:
 
 private:
     inline static const size_t kGapBufferSize = 16;
-    enum class Command { ShiftRight, ShiftLeft, Backspace, Type};
+    enum class Command { ShiftRight, ShiftLeft, Backspace, Type };
     std::vector<Command> to_undo_;
     std::vector<Command> to_redo_;
     size_t left_ = 0;
