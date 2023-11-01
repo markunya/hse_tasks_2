@@ -35,7 +35,7 @@ public:
     template <class TestClass>
     void RegisterClass(const std::string& class_name) {
         if (!registry_.count(class_name)) {
-            registry_[class_name] = new TestBuilder<TestClass>();
+            registry_[class_name].reset(new TestBuilder<TestClass>());
         }
     }
 
@@ -43,7 +43,7 @@ public:
         if (!registry_.count(class_name)) {
             throw std::out_of_range("Test is not registered");
         }
-        return std::unique_ptr<AbstractTest>(registry_[class_name]->Create());
+        return registry_[class_name]->Create();
     }
 
     void RunTest(const std::string& test_name) {
@@ -61,7 +61,7 @@ public:
     template <class Predicate>
     std::vector<std::string> ShowTests(Predicate callback) const {
         std::vector<std::string> result;
-        for (auto [str, _] : registry_) {
+        for (auto& [str, _] : registry_) {
             if (callback(str)) {
                 result.emplace_back(str);
             }
@@ -72,7 +72,7 @@ public:
     std::vector<std::string> ShowAllTests() const {
         std::vector<std::string> result;
         result.reserve(registry_.size());
-        for (auto [str, _] : registry_) {
+        for (auto& [str, _] : registry_) {
             result.emplace_back(str);
         }
         return result;
@@ -80,7 +80,7 @@ public:
 
     template <class Predicate>
     void RunTests(Predicate callback) {
-        for (auto [str, _] : registry_) {
+        for (auto& [str, _] : registry_) {
             if (callback(str)) {
                 RunTest(str);
             }
@@ -103,17 +103,17 @@ protected:
 
 private:
     struct TestBuilderBase {
-        virtual AbstractTest* Create() = 0;
+        virtual std::unique_ptr<AbstractTest> Create() = 0;
         virtual ~TestBuilderBase() = default;
     };
 
     template <typename TestClass>
     struct TestBuilder : TestBuilderBase {
-        AbstractTest* Create() override {
-            return (new TestClass());
+        std::unique_ptr<AbstractTest> Create() override {
+            return std::unique_ptr<AbstractTest>(new TestClass());
         }
     };
 
-    std::map<std::string, TestBuilderBase*> registry_;
+    std::map<std::string, std::unique_ptr<TestBuilderBase>> registry_;
     inline static std::unique_ptr<TestRegistry> instance = nullptr;
 };
