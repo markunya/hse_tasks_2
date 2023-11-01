@@ -3,6 +3,7 @@
 #include <map>
 #include <exception>
 #include <string>
+#include <memory>
 
 class AbstractTest {
 public:
