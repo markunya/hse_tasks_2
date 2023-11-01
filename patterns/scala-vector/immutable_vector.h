@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 template <class T>
 class ImmutableVector {
 public:
@@ -55,13 +57,9 @@ public:
     }
 
     ImmutableVector PushBack(const T& value) {
-
         if (size_ == (1 << (Depth() * kAm))) {
             for (size_t i = 0; i < size_; ++i) {
                 Add(i, Depth() + 1, Get(i), root_.get());
-            }
-            if (value == 1024) {
-                int x = 1 + 1;
             }
             Add(size_, Depth() + 1, value, root_.get());
             return ImmutableVector<T>(root_, size_ + 1);
