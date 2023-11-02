@@ -28,8 +28,8 @@ constexpr int determinant(const int a[N][N]) {
 template <size_t N>
 constexpr int determinant(const std::array<std::array<int, N>, N>& a) {
     int matrix[N][N];
-    for (size_t i = 0; i < N; ++i) {
-        for (size_t j = 0; j < N; ++j) {
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
             matrix[i][j] = a[i][j];
         }
     }
