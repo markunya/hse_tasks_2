@@ -2,7 +2,7 @@
 
 #include <array>
 
-template <size_t N>
+template <int N>
 constexpr int determinant(const int a[N][N]) {
     int det = 0;
     if (N == 1) {
@@ -25,7 +25,7 @@ constexpr int determinant(const int a[N][N]) {
     return det;
 }
 
-template <size_t N>
+template <int N>
 constexpr int determinant(const std::array<std::array<int, N>, N>& a) {
     int matrix[N][N];
     for (int i = 0; i < N; ++i) {
