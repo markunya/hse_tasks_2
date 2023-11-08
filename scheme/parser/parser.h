@@ -10,4 +10,3 @@ std::shared_ptr<Object> ReadList(Tokenizer*);
 std::shared_ptr<Object> ReadDefault(Tokenizer*);
 
 std::shared_ptr<Object> Read(Tokenizer*);
-

@@ -18,7 +18,7 @@ bool DotToken::operator==(const DotToken &) const {
 ConstantToken::ConstantToken(int x) : value(x) {
 }
 
-bool ConstantToken::operator==(const ConstantToken &other) const  {
+bool ConstantToken::operator==(const ConstantToken &other) const {
     return value == other.value;
 }
 
@@ -33,7 +33,7 @@ Tokenizer::Tokenizer(std::istream *in) : stream_(in) {
     Next();
 }
 
-bool Tokenizer::IsEnd() const  {
+bool Tokenizer::IsEnd() const {
     return is_end_;
 }
 
@@ -82,8 +82,7 @@ void Tokenizer::Next() {
                c == '#' || c == '!' || c == '?' || c == '-';
     };
     if (is_symbol_beginning(str.back())) {
-        while (stream_->peek() != EOF &&
-               is_symbol_character(static_cast<char>(stream_->peek()))) {
+        while (stream_->peek() != EOF && is_symbol_character(static_cast<char>(stream_->peek()))) {
             str += static_cast<char>(stream_->get());
         }
         if (stream_->peek() != EOF && !std::isspace(static_cast<char>(stream_->peek()))) {
@@ -95,11 +94,11 @@ void Tokenizer::Next() {
     throw SyntaxError("str");
 }
 
-Token Tokenizer::GetToken()  {
+Token Tokenizer::GetToken() {
     return current_token_;
 }
 
-void Tokenizer::SkipSpace()  {
+void Tokenizer::SkipSpace() {
     while (stream_->peek() != EOF && std::isspace(stream_->peek())) {
         stream_->get();
     }

@@ -44,7 +44,8 @@ std::shared_ptr<Object> ReadList(Tokenizer* tokenizer) {
             try {
                 res = ReadDefault(tokenizer);
             } catch (const SyntaxError& e) {
-                if (strcmp(e.what(), "troubles with brackets") == 0 || strcmp(e.what(), "dot") == 0) {
+                if (strcmp(e.what(), "troubles with brackets") == 0 ||
+                    strcmp(e.what(), "dot") == 0) {
                     throw SyntaxError("");
                 }
             }

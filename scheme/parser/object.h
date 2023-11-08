@@ -69,7 +69,8 @@ class Cell : public Object {
 public:
     Cell() = delete;
 
-    Cell(std::shared_ptr<Object> first, std::shared_ptr<Object> second = nullptr) : first_(first), second_(second) {
+    Cell(std::shared_ptr<Object> first, std::shared_ptr<Object> second = nullptr)
+        : first_(first), second_(second) {
     }
 
     std::shared_ptr<Object> GetFirst() const {
