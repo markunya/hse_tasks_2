@@ -532,8 +532,6 @@ std::shared_ptr<Object> ListTailFunction::Apply(std::shared_ptr<Object> obj) {
     return current->Clone();
 }
 
-
-
 std::shared_ptr<Object> IfFunction::Apply(std::shared_ptr<Object> obj) {
     if (!obj || obj->Type() != typeid(Cell)) {
         throw SyntaxError("Invalid syntax for if");
@@ -549,7 +547,8 @@ std::shared_ptr<Object> IfFunction::Apply(std::shared_ptr<Object> obj) {
         }
     }
     if (depth == 1) {
-        throw SyntaxError("Invalid syntax for if");;
+        throw SyntaxError("Invalid syntax for if");
+        ;
     }
     if (!current_cell->GetFirst()) {
         throw RuntimeError("If statement used not correct");
@@ -588,8 +587,7 @@ std::shared_ptr<Object> SetFunction::Apply(std::shared_ptr<Object> obj) {
     return nullptr;
 }
 
-std::pair<Symbol*, std::shared_ptr<Object>> VarsFunction::Helper(
-    std::shared_ptr<Object> obj) {
+std::pair<Symbol*, std::shared_ptr<Object>> VarsFunction::Helper(std::shared_ptr<Object> obj) {
     if (!obj || obj->Type() != typeid(Cell)) {
         throw SyntaxError("Invalid syntax for define");
     }
@@ -621,13 +619,13 @@ std::shared_ptr<Object> LambdaFunction::Apply(std::shared_ptr<Object> obj) {
     return result;
 }
 
-void LambdaFunction::SetParentsScope(void* ptr)  {
+void LambdaFunction::SetParentsScope(void* ptr) {
     scope_ = reinterpret_cast<Scope*>(ptr)->shared_from_this();
 }
 
-Lambda::Lambda(std::shared_ptr<Object> args,
-               std::shared_ptr<Object> body,
-               std::shared_ptr<Scope> parents_scope) : instructions_(body), scope_(std::make_shared<Scope>(parents_scope)) {
+Lambda::Lambda(std::shared_ptr<Object> args, std::shared_ptr<Object> body,
+               std::shared_ptr<Scope> parents_scope)
+    : instructions_(body), scope_(std::make_shared<Scope>(parents_scope)) {
     auto current = dynamic_cast<Cell*>(args.get());
     while (current) {
         if (current->GetFirst()->Type() != typeid(Symbol)) {
@@ -661,7 +659,8 @@ std::shared_ptr<Object> Lambda::Apply(std::shared_ptr<Object> obj) {
     return result;
 }
 
-void Lambda::FillScope(std::shared_ptr<Object> obj, std::vector<std::pair<std::string, std::shared_ptr<Object>>>& remember) {
+void Lambda::FillScope(std::shared_ptr<Object> obj,
+                       std::vector<std::pair<std::string, std::shared_ptr<Object>>>& remember) {
     auto current = dynamic_cast<Cell*>(obj.get());
     size_t index = 0;
     while (current) {
@@ -681,7 +680,8 @@ void Lambda::FillScope(std::shared_ptr<Object> obj, std::vector<std::pair<std::s
     }
 }
 
-void ModifyConsFunction::Helper(std::shared_ptr<Object> obj, std::vector<std::shared_ptr<Object>>& vec) {
+void ModifyConsFunction::Helper(std::shared_ptr<Object> obj,
+                                std::vector<std::shared_ptr<Object>>& vec) {
     Object* current = obj.get();
     while (current) {
         if (current->Type() != typeid(Cell)) {

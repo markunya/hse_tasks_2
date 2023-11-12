@@ -25,8 +25,6 @@ public:
         return shared_from_this();
     }
 
-
-
     void Clear();
 
 private:

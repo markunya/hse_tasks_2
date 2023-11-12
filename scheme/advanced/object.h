@@ -136,4 +136,3 @@ template <class T>
 bool Is(const std::shared_ptr<Object>& obj) {
     return obj->Type() == typeid(T);
 }
-

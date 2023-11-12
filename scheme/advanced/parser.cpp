@@ -9,11 +9,9 @@ std::shared_ptr<Object> LambdaSugarRebuilder(std::shared_ptr<Object> obj) {
     std::shared_ptr<Object> name = right->GetFirst();
     std::shared_ptr<Object> args = right->GetSecond();
     std::shared_ptr<Object> body = root->GetSecond();
-    return std::make_shared<Cell>(name,
-                                  std::make_shared<Cell>(
-                                      std::make_shared<Cell>(
-                                          std::make_shared<Symbol>("lambda"),
-                                              std::make_shared<Cell>(args, body))));
+    return std::make_shared<Cell>(
+        name, std::make_shared<Cell>(std::make_shared<Cell>(std::make_shared<Symbol>("lambda"),
+                                                            std::make_shared<Cell>(args, body))));
 }
 
 std::shared_ptr<Object> ReadDefault(Tokenizer* tokenizer) {
@@ -27,7 +25,7 @@ std::shared_ptr<Object> ReadDefault(Tokenizer* tokenizer) {
             throw SyntaxError("expected expression after quote");
         }
         return std::make_shared<Cell>(std::make_shared<Symbol>("quote"),
-                                                std::make_shared<Cell>(ReadDefault(tokenizer)));
+                                      std::make_shared<Cell>(ReadDefault(tokenizer)));
     }
     if (std::holds_alternative<ConstantToken>(token)) {
         tokenizer->Next();

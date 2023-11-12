@@ -174,12 +174,14 @@ private:
 
 struct Lambda : public Object {
 public:
-    Lambda(std::shared_ptr<Object> args, std::shared_ptr<Object> body, std::shared_ptr<Scope> parents_scope);
+    Lambda(std::shared_ptr<Object> args, std::shared_ptr<Object> body,
+           std::shared_ptr<Scope> parents_scope);
 
     std::shared_ptr<Object> Apply(std::shared_ptr<Object> obj);
 
 private:
-    void FillScope(std::shared_ptr<Object> obj, std::vector<std::pair<std::string, std::shared_ptr<Object>>>& remember);
+    void FillScope(std::shared_ptr<Object> obj,
+                   std::vector<std::pair<std::string, std::shared_ptr<Object>>>& remember);
 
     std::shared_ptr<Object> instructions_;
     std::vector<std::string> arguments_;

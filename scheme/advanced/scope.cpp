@@ -3,8 +3,10 @@
 Scope::Scope(std::shared_ptr<Scope> ptr) : next_(ptr) {
 }
 
-Scope::Scope(std::initializer_list<std::pair<std::string, std::shared_ptr<Object>>> list, Scope* ptr)
-    : next_(ptr), data_(std::make_unique<std::unordered_map<std::string, std::shared_ptr<Object>>>(
+Scope::Scope(std::initializer_list<std::pair<std::string, std::shared_ptr<Object>>> list,
+             Scope* ptr)
+    : next_(ptr),
+      data_(std::make_unique<std::unordered_map<std::string, std::shared_ptr<Object>>>(
           list.begin(), list.end())) {
 }
 
@@ -30,7 +32,7 @@ void Scope::Set(const std::string& key, std::shared_ptr<Object> value) {
         Up()->Set(key, value);
         return;
     }
-     data_->operator[](key) = value;
+    data_->operator[](key) = value;
 }
 
 Scope* Scope::Up() {
