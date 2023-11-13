@@ -17,6 +17,7 @@ public:
     template <typename F>
     FunctionRef& operator=(F&& f) {
         Builder(f);
+        return *this;
     }
 
     R operator()(Args... args) const {
