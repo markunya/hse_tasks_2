@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 struct Flag {
 public:
