@@ -1,23 +1,24 @@
 #include "is_prime.h"
 #include <cmath>
 #include <algorithm>
-#include <mutex>
 #include <thread>
 #include <vector>
+#include <shared_mutex>
 
 struct Flag {
 public:
     void Set() {
-        auto guard = std::lock_guard{m_};
+        std::unique_lock lock{m_};
         flag_ = true;
     }
 
     bool Get() const {
+        std::shared_lock lock{m_};
         return flag_;
     }
 
 private:
-    std::mutex m_;
+    mutable std::shared_mutex m_;
     bool flag_ = false;
 };
 
