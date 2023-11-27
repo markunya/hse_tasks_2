@@ -8,12 +8,11 @@
 struct Flag {
 public:
     void Set() {
-        m_.lock();
+        auto guard = std::lock_guard{m_};
         flag_ = true;
-        m_.unlock();
     }
 
-    bool Get() {
+    bool Get() const {
         return flag_;
     }
 
@@ -22,7 +21,8 @@ private:
     bool flag_ = false;
 };
 
-void IsPrimeChecker(uint64_t number, uint64_t root, uint64_t index, uint64_t num_of_threads, Flag* flag) {
+void IsPrimeChecker(uint64_t number, uint64_t root, uint64_t index, uint64_t num_of_threads,
+                    Flag* flag) {
     for (uint64_t i = index + 2; i <= root; i += num_of_threads) {
         if (flag->Get()) {
             return;
