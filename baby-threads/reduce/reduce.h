@@ -1,5 +1,6 @@
 #pragma once
 #include <thread>
+#include <vector>
 
 template <class RandomAccessIterator, class T, class Func>
 void ReduceForThread(RandomAccessIterator first, RandomAccessIterator last, Func func, int step,
