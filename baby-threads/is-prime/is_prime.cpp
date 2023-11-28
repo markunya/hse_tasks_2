@@ -5,32 +5,16 @@
 #include <vector>
 #include <shared_mutex>
 #include <mutex>
-
-struct Flag {
-public:
-    void Set() {
-        std::unique_lock lock{m_};
-        flag_ = true;
-    }
-
-    bool Get() const {
-        std::shared_lock lock{m_};
-        return flag_;
-    }
-
-private:
-    mutable std::shared_mutex m_;
-    bool flag_ = false;
-};
+#include <atomic>
 
 void IsPrimeChecker(uint64_t number, uint64_t root, uint64_t index, uint64_t num_of_threads,
-                    Flag* flag) {
+                    std::atomic<bool>* flag) {
     for (uint64_t i = index + 2; i <= root; i += num_of_threads) {
-        if (flag->Get()) {
+        if (*flag) {
             return;
         }
         if (number % i == 0) {
-            flag->Set();
+            *flag = true;
             return;
         }
     }
@@ -40,7 +24,7 @@ bool IsPrime(uint64_t x) {
     if (x <= 1) {
         return false;
     }
-    Flag result;
+    std::atomic<bool> result = false;
     uint64_t root = sqrt(x);
     uint64_t num_of_threads = std::thread::hardware_concurrency();
     std::vector<std::thread> workers;
@@ -50,5 +34,5 @@ bool IsPrime(uint64_t x) {
     for (uint64_t i = 0; i < num_of_threads; ++i) {
         workers[i].join();
     }
-    return !result.Get();
+    return !result;
 }
