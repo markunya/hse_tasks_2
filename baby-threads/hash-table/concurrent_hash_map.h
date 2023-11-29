@@ -19,11 +19,11 @@ public:
 
     ConcurrentHashMap(int expected_size, int expected_threads_count, const Hash& hasher = Hash())
         : hasher_(hasher),
-          data_(((expected_size <= expected_threads_count * 171)
-                     ? expected_threads_count * 171
-                     : ((expected_size + expected_threads_count * 171 - 1) / (expected_threads_count * 171)) *
-                           expected_threads_count * 171)),
-          locks_(expected_threads_count * 171) {
+          data_(((expected_size <= expected_threads_count * 17)
+                     ? expected_threads_count * 17
+                     : ((expected_size + expected_threads_count * 17 - 1) / (expected_threads_count * 17)) *
+                           expected_threads_count * 17)),
+          locks_(expected_threads_count * 17) {
     }
 
     bool Insert(const K& key, const V& value) {
@@ -34,7 +34,9 @@ public:
         locks_[hash_of_key % locks_.size()].lock();
         if (size_ > data_.size()) {
             locks_[hash_of_key % locks_.size()].unlock();
+            rehash_mutex_.lock();
             Rehash();
+            rehash_mutex_.unlock();
             locks_[hash_of_key % locks_.size()].lock();
         }
         size_t index = hash_of_key % data_.size();
@@ -68,12 +70,14 @@ public:
     void Clear() {
         for (size_t i = 0; i < locks_.size(); ++i) {
             locks_[i].lock();
-            for (size_t j = i; j < data_.size(); j += locks_.size()) {
-                data_[j].reset(nullptr);
-            }
-            locks_[i].unlock();
+        }
+        for (size_t i = 0; i < data_.size(); ++i) {
+            data_[i].reset(nullptr);
         }
         size_ = 0;
+        for (size_t i = 0; i < locks_.size(); ++i) {
+            locks_[i].unlock();
+        }
     }
 
     std::pair<bool, V> Find(const K& key) const {
@@ -88,7 +92,7 @@ public:
             locks_[index % locks_.size()].unlock();
             return std::pair<bool, V>(false, V{});
         }
-        V result_value = current->value;
+        auto result_value = current->value;
         locks_[hash_of_key % locks_.size()].unlock();
         return std::pair<bool, V>(true, result_value);
     }
@@ -140,6 +144,7 @@ private:
     }
 
     std::atomic<size_t> size_ = 0;
+    std::mutex rehash_mutex_;
     Hash hasher_;
     std::vector<std::unique_ptr<Node>> data_;
     mutable std::vector<std::mutex> locks_;
