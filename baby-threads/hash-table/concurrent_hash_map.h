@@ -23,7 +23,8 @@ public:
                      ? expected_threads_count * 7
                      : ((expected_size + expected_threads_count * 7 - 1) /
                         (expected_threads_count * 7)) *
-                           expected_threads_count * 7)),
+                           expected_threads_count * 7),
+                nullptr),
           locks_(expected_threads_count * 7) {
     }
 
@@ -32,14 +33,14 @@ public:
             return false;
         }
         rehash_mutex_.lock();
-        if (size_ >= data_.size()) {
+        if (size_ * 2 >= data_.size()) {
             Rehash();
         }
         rehash_mutex_.unlock();
         size_t hash_of_key = hasher_(key);
         locks_[hash_of_key % locks_.size()].lock();
         size_t index = hash_of_key % data_.size();
-        data_[index] = std::make_unique<Node>(key, value, std::move(data_[index]));
+        data_[index] = new Node(key, value, data_[index]);
         ++size_;
         locks_[hash_of_key % locks_.size()].unlock();
         return true;
@@ -53,13 +54,17 @@ public:
         locks_[hash_of_key % locks_.size()].lock();
         size_t index = hash_of_key % data_.size();
         if (data_[index]->key == key) {
-            data_[index] = std::move(data_[index]->next);
+            auto ptr = data_[index];
+            data_[index] = data_[index]->next;
+            delete ptr;
         } else {
-            Node* current = data_[index].get();
+            Node* current = data_[index];
             while (current->next->key != key) {
-                current = current->next.get();
+                current = current->next;
             }
-            current->next = std::move(current->next->next);
+            auto ptr = current->next;
+            current->next = current->next->next;
+            delete ptr;
         }
         --size_;
         locks_[hash_of_key % locks_.size()].unlock();
@@ -71,7 +76,11 @@ public:
             locks_[i].lock();
         }
         for (size_t i = 0; i < data_.size(); ++i) {
-            data_[i].reset(nullptr);
+            if (!data_[i]) {
+                continue;
+            }
+            data_[i]->Delete();
+            data_[i] = nullptr;
         }
         size_ = 0;
         for (size_t i = 0; i < locks_.size(); ++i) {
@@ -83,9 +92,9 @@ public:
         size_t hash_of_key = hasher_(key);
         locks_[hash_of_key % locks_.size()].lock();
         size_t index = hash_of_key % data_.size();
-        Node* current = data_[index].get();
+        Node* current = data_[index];
         while (current != nullptr && current->key != key) {
-            current = current->next.get();
+            current = current->next;
         }
         if (!current) {
             locks_[hash_of_key % locks_.size()].unlock();
@@ -108,15 +117,30 @@ public:
         return size_;
     }
 
+    ~ConcurrentHashMap() {
+        for (size_t i = 0; i < data_.size(); ++i) {
+            if (!data_[i]) {
+                continue;
+            }
+            data_[i]->Delete();
+        }
+    }
+
     static const int kDefaultConcurrencyLevel;
     static const int kUndefinedSize;
 
 private:
     struct Node {
-        std::unique_ptr<Node> next;
+        Node* next;
         K key;
         V value;
-        Node(K k, V v, std::unique_ptr<Node> n = nullptr) : next(std::move(n)), key(k), value(v) {
+        void Delete() {
+            if (next != nullptr) {
+                next->Delete();
+            }
+            delete this;
+        };
+        Node(K k, V v, Node* n = nullptr) : next(std::move(n)), key(k), value(v) {
         }
     };
 
@@ -124,17 +148,16 @@ private:
         for (size_t i = 0; i < locks_.size(); ++i) {
             locks_[i].lock();
         }
-        size_ = 0;
-        std::vector<std::unique_ptr<Node>> prev_data(data_.size() * 2);
+        std::vector<Node*> prev_data(data_.size() * 2, nullptr);
         prev_data.swap(data_);
         for (size_t i = 0; i < prev_data.size(); ++i) {
-            Node* current = prev_data[i].get();
-            while (current) {
-                size_t index = hasher_(current->key) % data_.size();
-                data_[index] =
-                    std::make_unique<Node>(current->key, current->value, std::move(data_[index]));
-                ++size_;
-                current = current->next.get();
+            Node* ptr = prev_data[i];
+            while (ptr) {
+                Node* next_ptr = ptr->next;
+                size_t index = hasher_(ptr->key) % data_.size();
+                ptr->next = data_[index];
+                data_[index] = ptr;
+                ptr = next_ptr;
             }
         }
         for (size_t i = 0; i < locks_.size(); ++i) {
@@ -144,7 +167,7 @@ private:
     std::mutex rehash_mutex_;
     std::atomic<size_t> size_ = 0;
     Hash hasher_;
-    std::vector<std::unique_ptr<Node>> data_;
+    std::vector<Node*> data_;
     mutable std::vector<std::mutex> locks_;
 };
 
