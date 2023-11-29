@@ -19,11 +19,11 @@ public:
 
     ConcurrentHashMap(int expected_size, int expected_threads_count, const Hash& hasher = Hash())
         : hasher_(hasher),
-          data_(((expected_size <= expected_threads_count * 17)
-                     ? expected_threads_count * 17
-                     : ((expected_size + expected_threads_count * 17 - 1) / (expected_threads_count * 17)) *
-                           expected_threads_count * 17)),
-          locks_(expected_threads_count * 17) {
+          data_(((expected_size <= expected_threads_count * 7)
+                     ? expected_threads_count * 7
+                     : ((expected_size + expected_threads_count * 7 - 1) / (expected_threads_count * 7)) *
+                           expected_threads_count * 7)),
+          locks_(expected_threads_count * 7) {
     }
 
     bool Insert(const K& key, const V& value) {
