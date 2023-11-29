@@ -30,7 +30,11 @@ public:
         if (Find(key).first) {
             return false;
         }
-        Rehash();
+        rehash_mutex_.lock();
+        if (size_ >= data_.size()) {
+            Rehash();
+        }
+        rehash_mutex_.unlock();
         size_t hash_of_key = hasher_(key);
         locks_[hash_of_key % locks_.size()].lock();
         size_t index = hash_of_key % data_.size();
@@ -116,9 +120,6 @@ private:
     };
 
     void Rehash() {
-        if (size_ < data_.size()) {
-            return;
-        }
         for (size_t i = 0; i < locks_.size(); ++i) {
             locks_[i].lock();
         }
@@ -139,7 +140,7 @@ private:
             locks_[i].unlock();
         }
     }
-
+    std::mutex rehash_mutex_;
     std::atomic<size_t> size_ = 0;
     Hash hasher_;
     std::vector<std::unique_ptr<Node>> data_;
