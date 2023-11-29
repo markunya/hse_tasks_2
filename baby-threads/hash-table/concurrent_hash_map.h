@@ -85,8 +85,9 @@ public:
             locks_[index % locks_.size()].unlock();
             return std::pair<bool, V>(false, V{});
         }
+        V result_value = current->value;
         locks_[index % locks_.size()].unlock();
-        return std::pair<bool, V>(true, current->value);
+        return std::pair<bool, V>(true, result_value);
     }
 
     const V At(const K& key) const {
