@@ -117,6 +117,7 @@ private:
         for (size_t i = 0; i < locks_.size(); ++i) {
             locks_[i].lock();
         }
+        size_ = 0;
         std::vector<std::unique_ptr<Node>> prev_data(data_.size() * 2);
         prev_data.swap(data_);
         for (size_t i = 0; i < prev_data.size(); ++i) {
