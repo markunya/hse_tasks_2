@@ -30,15 +30,9 @@ public:
         if (Find(key).first) {
             return false;
         }
+        Rehash();
         size_t hash_of_key = hasher_(key);
         locks_[hash_of_key % locks_.size()].lock();
-        if (size_ > data_.size()) {
-            locks_[hash_of_key % locks_.size()].unlock();
-            rehash_mutex_.lock();
-            Rehash();
-            rehash_mutex_.unlock();
-            locks_[hash_of_key % locks_.size()].lock();
-        }
         size_t index = hash_of_key % data_.size();
         data_[index] = std::make_unique<Node>(key, value, std::move(data_[index]));
         ++size_;
@@ -89,7 +83,7 @@ public:
             current = current->next.get();
         }
         if (!current) {
-            locks_[index % locks_.size()].unlock();
+            locks_[hash_of_key % locks_.size()].unlock();
             return std::pair<bool, V>(false, V{});
         }
         auto result_value = current->value;
@@ -122,6 +116,9 @@ private:
     };
 
     void Rehash() {
+        if (size_ < data_.size()) {
+            return;
+        }
         for (size_t i = 0; i < locks_.size(); ++i) {
             locks_[i].lock();
         }
@@ -144,7 +141,6 @@ private:
     }
 
     std::atomic<size_t> size_ = 0;
-    std::mutex rehash_mutex_;
     Hash hasher_;
     std::vector<std::unique_ptr<Node>> data_;
     mutable std::vector<std::mutex> locks_;
