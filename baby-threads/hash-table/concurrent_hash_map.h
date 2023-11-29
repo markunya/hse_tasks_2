@@ -30,14 +30,17 @@ public:
         if (Find(key).first) {
             return false;
         }
+        size_t hash_of_key = hasher_(key);
+        locks_[hash_of_key % locks_.size()].lock();
         if (size_ > data_.size()) {
+            locks_[hash_of_key % locks_.size()].unlock();
             Rehash();
+            locks_[hash_of_key % locks_.size()].lock();
         }
-        locks_[hasher_(key) % locks_.size()].lock();
-        size_t index = hasher_(key) % data_.size();
+        size_t index = hash_of_key % data_.size();
         data_[index] = std::make_unique<Node>(key, value, std::move(data_[index]));
         ++size_;
-        locks_[index % locks_.size()].unlock();
+        locks_[hash_of_key % locks_.size()].unlock();
         return true;
     }
 
@@ -45,8 +48,9 @@ public:
         if (!Find(key).first) {
             return false;
         }
-        locks_[hasher_(key) % locks_.size()].lock();
-        size_t index = hasher_(key) % data_.size();
+        size_t hash_of_key = hasher_(key);
+        locks_[hash_of_key % locks_.size()].lock();
+        size_t index = hash_of_key % data_.size();
         if (data_[index]->key == key) {
             data_[index] = std::move(data_[index]->next);
         } else {
@@ -57,7 +61,7 @@ public:
             current->next = std::move(current->next->next);
         }
         --size_;
-        locks_[index % locks_.size()].unlock();
+        locks_[hash_of_key % locks_.size()].unlock();
         return true;
     }
 
@@ -75,8 +79,9 @@ public:
     }
 
     std::pair<bool, V> Find(const K& key) const {
-        locks_[hasher_(key) % locks_.size()].lock();
-        size_t index = hasher_(key) % data_.size();
+        size_t hash_of_key = hasher_(key);
+        locks_[hash_of_key % locks_.size()].lock();
+        size_t index = hash_of_key % data_.size();
         Node* current = data_[index].get();
         while (current != nullptr && current->key != key) {
             current = current->next.get();
@@ -86,7 +91,7 @@ public:
             return std::pair<bool, V>(false, V{});
         }
         V result_value = current->value;
-        locks_[index % locks_.size()].unlock();
+        locks_[hash_of_key % locks_.size()].unlock();
         return std::pair<bool, V>(true, result_value);
     }
 
