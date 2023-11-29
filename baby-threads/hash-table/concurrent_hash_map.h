@@ -21,7 +21,8 @@ public:
         : hasher_(hasher),
           data_(((expected_size <= expected_threads_count * 7)
                      ? expected_threads_count * 7
-                     : ((expected_size + expected_threads_count * 7 - 1) / (expected_threads_count * 7)) *
+                     : ((expected_size + expected_threads_count * 7 - 1) /
+                        (expected_threads_count * 7)) *
                            expected_threads_count * 7)),
           locks_(expected_threads_count * 7) {
     }
