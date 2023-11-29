@@ -19,11 +19,11 @@ public:
 
     ConcurrentHashMap(int expected_size, int expected_threads_count, const Hash& hasher = Hash())
         : hasher_(hasher),
-          data_(((expected_size <= expected_threads_count * 53)
-                     ? expected_threads_count * 53
-                     : ((expected_size + expected_threads_count * 53 - 1) / (expected_threads_count * 53)) *
-                           expected_threads_count * 53)),
-          locks_(expected_threads_count * 53) {
+          data_(((expected_size <= expected_threads_count * 171)
+                     ? expected_threads_count * 171
+                     : ((expected_size + expected_threads_count * 171 - 1) / (expected_threads_count * 171)) *
+                           expected_threads_count * 171)),
+          locks_(expected_threads_count * 171) {
     }
 
     bool Insert(const K& key, const V& value) {
@@ -68,14 +68,12 @@ public:
     void Clear() {
         for (size_t i = 0; i < locks_.size(); ++i) {
             locks_[i].lock();
-        }
-        for (size_t i = 0; i < data_.size(); ++i) {
-            data_[i].reset(nullptr);
-        }
-        size_ = 0;
-        for (size_t i = 0; i < locks_.size(); ++i) {
+            for (size_t j = i; j < data_.size(); j += locks_.size()) {
+                data_[j].reset(nullptr);
+            }
             locks_[i].unlock();
         }
+        size_ = 0;
     }
 
     std::pair<bool, V> Find(const K& key) const {
