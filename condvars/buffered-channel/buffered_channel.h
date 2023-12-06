@@ -23,6 +23,7 @@ public:
         q_.push(value);
         if (q_.size() == 1) {
             not_empty_.notify_one();
+            not_full_.notify_one();
         }
     }
 
@@ -37,6 +38,7 @@ public:
         T result = q_.front();
         q_.pop();
         if (q_.size() + 1 == max_size_) {
+            not_empty_.notify_one();
             not_full_.notify_one();
         }
         return result;
