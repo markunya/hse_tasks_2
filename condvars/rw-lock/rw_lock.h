@@ -46,7 +46,7 @@ private:
     size_t amount_of_writers_waiting_ = 0;
     size_t amount_of_readers_active_ = 0;
     bool is_writer_active_ = false;
-    std::condition_variable  cd_;
+    std::condition_variable cd_;
     std::mutex global_;
 
     void EndRead() {
