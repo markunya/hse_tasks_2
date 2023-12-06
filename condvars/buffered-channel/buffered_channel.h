@@ -4,16 +4,17 @@
 #include <optional>
 #include <queue>
 #include <condition_variable>
+#include <atomic>
 
 template <class T>
 class BufferedChannel {
 public:
-    explicit BufferedChannel(int size) : size_(size) {
+    explicit BufferedChannel(int size) : max_size_(size) {
     }
 
     void Send(const T& value) {
         auto guard = std::unique_lock{m_};
-        while (q_.size() == size_ && !is_closed_) {
+        while (q_.size() == max_size_ && !is_closed_) {
             not_full_.wait(guard);
         }
         if (is_closed_) {
@@ -35,14 +36,13 @@ public:
         }
         T result = q_.front();
         q_.pop();
-        if (q_.size() + 1 == size_) {
+        if (q_.size() + 1 == max_size_) {
             not_full_.notify_one();
         }
         return result;
     }
 
     void Close() {
-        auto guard = std::unique_lock{m_};
         is_closed_ = true;
         not_empty_.notify_all();
         not_full_.notify_all();
@@ -50,9 +50,9 @@ public:
 
 private:
     std::mutex m_;
-    size_t size_;
+    size_t max_size_;
     std::queue<T> q_;
     std::condition_variable not_empty_;
     std::condition_variable not_full_;
-    bool is_closed_ = false;
+    std::atomic<bool> is_closed_ = false;
 };
