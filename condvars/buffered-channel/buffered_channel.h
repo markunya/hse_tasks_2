@@ -21,10 +21,8 @@ public:
             throw std::runtime_error("Attempt to send on closed chanel");
         }
         q_.push(value);
-        if (q_.size() == 1) {
-            not_empty_.notify_one();
-            not_full_.notify_one();
-        }
+        not_empty_.notify_one();
+        not_full_.notify_one();
     }
 
     std::optional<T> Recv() {
@@ -37,14 +35,13 @@ public:
         }
         T result = q_.front();
         q_.pop();
-        if (q_.size() + 1 == max_size_) {
-            not_empty_.notify_one();
-            not_full_.notify_one();
-        }
+        not_full_.notify_one();
+        not_empty_.notify_one();
         return result;
     }
 
     void Close() {
+        auto guard = std::unique_lock{m_};
         is_closed_ = true;
         not_empty_.notify_all();
         not_full_.notify_all();
@@ -56,5 +53,5 @@ private:
     std::queue<T> q_;
     std::condition_variable not_empty_;
     std::condition_variable not_full_;
-    std::atomic<bool> is_closed_ = false;
+    bool is_closed_ = false;
 };
