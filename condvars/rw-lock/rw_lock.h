@@ -8,7 +8,7 @@ public:
     void Read(Func func) {
         {
             auto guard = std::unique_lock{global_};
-            while (amount_of_writers_waiting_ > 0 || is_writer_active_) {
+            while (is_writer_active_) {
                 cd_.wait(guard);
             }
             ++amount_of_readers_active_;
@@ -26,11 +26,9 @@ public:
     void Write(Func func) {
         {
             auto guard = std::unique_lock{global_};
-            ++amount_of_writers_waiting_;
             while (amount_of_readers_active_ > 0 || is_writer_active_) {
                 cd_.wait(guard);
             }
-            --amount_of_writers_waiting_;
             is_writer_active_ = true;
         }
         try {
@@ -43,7 +41,6 @@ public:
     }
 
 private:
-    size_t amount_of_writers_waiting_ = 0;
     size_t amount_of_readers_active_ = 0;
     bool is_writer_active_ = false;
     std::condition_variable cd_;
