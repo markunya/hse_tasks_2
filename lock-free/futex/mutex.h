@@ -17,23 +17,29 @@ void FutexWake(int *value, int count) {
 class Mutex {
 public:
     void Lock() {
-        int t = 0;
-        if (!a_.compare_exchange_strong(t, 1)) {
+        int t = CompareExchange(&atom_, 0, 1);
+        if (t != 0) {
             do {
-                if (t == 2 || a_.compare_exchange_strong(t, 2)) {
-                    FutexWait(reinterpret_cast<int *>(&a_), 2);
+                if (t == 2 || CompareExchange(&atom_, 1, 2) != 0) {
+                    FutexWait(reinterpret_cast<int *>(&atom_), 2);
                 }
-            } while (a_.compare_exchange_strong(t, 2));
+            } while ((t = CompareExchange(&atom_, 0, 2)) != 0);
         }
     }
 
     void Unlock() {
-        if (a_.fetch_sub(1) != 1) {
-            a_.store(0);
-            FutexWake(reinterpret_cast<int *>(&a_), 1);
+        if (atom_.fetch_sub(1) != 1) {
+            atom_.store(0);
+            FutexWake(reinterpret_cast<int *>(&atom_), 1);
         }
     }
 
 private:
-    std::atomic<int> a_ = 0;
+    std::atomic<int> atom_{0};
+
+    int CompareExchange(std::atomic<int> *a, int expected, int desired) {
+        int *ep = &expected;
+        std::atomic_compare_exchange_strong(a, ep, desired);
+        return *ep;
+    }
 };
