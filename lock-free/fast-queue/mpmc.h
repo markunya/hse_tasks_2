@@ -1,7 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <vector>
 #include <numeric>
+#include <stdio.h>
 
 template <class T>
 class MPMCBoundedQueue {
