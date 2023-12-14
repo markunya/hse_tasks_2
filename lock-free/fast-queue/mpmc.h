@@ -13,24 +13,24 @@ public:
     bool Enqueue(const T& value) {
         size_t current = back_.load();
         do {
-            if (front_ == back_ && current != generation_[current].load() % data_.size()) {
+            if (current != generation_[current % Size()].load()) {
                 return false;
             }
-        } while (!back_.compare_exchange_weak(current, (current + 1) % data_.size()));
-        data_[current] = value;
-        generation_[current].fetch_add(1);
+        } while (!back_.compare_exchange_weak(current, current + 1));
+        data_[current % Size()] = value;
+        generation_[current % Size()].fetch_add(1);
         return true;
     }
 
     bool Dequeue(T& data) {
         size_t current = front_.load();
         do {
-            if (front_ == back_ && current + 1 != generation_[current].load() % data_.size()) {
+            if (current + 1 != generation_[current % Size()].load()) {
                 return false;
             }
-        } while (!front_.compare_exchange_weak(current, (current + 1) % data_.size()));
-        data = data_[current];
-        generation_[current].fetch_add(data_.size() - 1);
+        } while (!front_.compare_exchange_weak(current, current + 1));
+        data = data_[current % Size()];
+        generation_[current % Size()].exchange(current + Size());
         return true;
     }
 
@@ -39,4 +39,8 @@ private:
     std::atomic<size_t> back_ = 0;
     std::vector<T> data_;
     std::vector<std::atomic<size_t>> generation_;
+
+    size_t Size() {
+        return data_.size();
+    }
 };
