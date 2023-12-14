@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mutex>
 #include <vector>
 #include <numeric>
 
@@ -17,7 +16,7 @@ public:
             if (front_ == back_ && current != generation_[current].load() % data_.size()) {
                 return false;
             }
-        } while(!back_.compare_exchange_weak(current, (current + 1) % data_.size()));
+        } while (!back_.compare_exchange_weak(current, (current + 1) % data_.size()));
         data_[current] = value;
         generation_[current].fetch_add(1);
         return true;
@@ -29,7 +28,7 @@ public:
             if (front_ == back_ && current + 1 != generation_[current].load() % data_.size()) {
                 return false;
             }
-        } while(!front_.compare_exchange_weak(current, (current + 1) % data_.size()));
+        } while (!front_.compare_exchange_weak(current, (current + 1) % data_.size()));
         data = data_[current];
         generation_[current].fetch_add(data_.size() - 1);
         return true;
