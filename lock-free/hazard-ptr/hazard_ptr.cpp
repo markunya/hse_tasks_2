@@ -18,34 +18,27 @@ void Release() {
     hazard_ptr.store(nullptr);
 }
 
-RetiredPtr::RetiredPtr(void *value, std::function<void(void *)> deleter, RetiredPtr *next) {
+RetiredPtr::RetiredPtr(void *value, std::function<void(void *)> deleter, RetiredPtr *next)
+    : value(value), deleter(deleter), next(next) {
 }
 
-std::atomic<RetiredPtr *> free_list = nullptr;
-std::atomic<int> approximate_free_list_size = 0;
+FreeList free_list;
 
-void FreeListPush(RetiredPtr *ptr) {
-    while (!free_list.compare_exchange_weak(ptr->next, ptr)) {
+size_t FreeList::Size() {
+    return size_.load();
+}
+
+void FreeList::Push(RetiredPtr *ptr) {
+    while (!head_.compare_exchange_weak(ptr->next, ptr)) {
     }
 }
 
-std::mutex scan_lock;
-
-void ScanFreeList() {
-    if (!approximate_free_list_size.exchange(0)) {
+void FreeList::ScanFreeList() {
+    if (!size_.exchange(0)) {
         return;
     }
-    auto scan_guard = std::unique_lock<std::mutex>{scan_lock};
-    // (0) Обнуляем approximate_free_list_size, чтобы другие потоки не пытались зайти в ScanFreeList
-    // вместе с нами.
-
-    // (1) С помощью мьютекса убеждаемся, что не больше одного потока занимается сканированием.
-    // В реальном коде не забудьте использовать guard.
-
-    // (2) Забираем все указатели из free_list
-    RetiredPtr *retired = free_list.exchange(nullptr);
-
-    // (3) Читаем множество защищённых указателей обойдя все ThreadState.
+    auto scan_guard = std::unique_lock<std::mutex>{scan_lock_};
+    RetiredPtr *retired = head_.exchange(nullptr);
     std::unordered_set<void *> hazard;
     {
         std::unique_lock guard(threads_lock);
@@ -64,12 +57,17 @@ void ScanFreeList() {
             current->deleter(current->value);
             delete current;
         } else {
-            FreeListPush(current);
+            free_list.Push(current);
         }
     }
-    // (4) Сканируем все retired указатели.
-    //    (a) Для тех, что не находятся в hazard, вызываем деструктор и освобождаем память под
-    //    RetiredPtr. (b) Те, что еще находятся в hazard, кладём назад в free_list.
-    //
-    // Для ускорения, hazard нужно посортировать и использовать бинарный поиск.
+}
+
+FreeList::~FreeList() {
+    auto current = head_.load();
+    while (current) {
+        auto ptr = current;
+        current = current->next;
+        ptr->deleter(ptr->value);
+        delete ptr;
+    }
 }

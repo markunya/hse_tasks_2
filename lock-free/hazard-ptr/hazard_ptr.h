@@ -31,8 +31,6 @@ T* Acquire(std::atomic<T*>* ptr) {
     } while (true);
 }
 
-void ScanFreeList();
-
 struct RetiredPtr {
     void* value;
     std::function<void(void*)> deleter;
@@ -40,11 +38,23 @@ struct RetiredPtr {
     RetiredPtr(void* value, std::function<void(void*)> deleter, RetiredPtr* next = nullptr);
 };
 
-void FreeListPush(RetiredPtr* ptr);
+class FreeList {
+public:
+    static const size_t kFreeListScanSize = 10;
 
-static const int kFreeListScanSize = 10;
-extern std::atomic<RetiredPtr*> free_list;
-extern std::atomic<int> approximate_free_list_size;
+public:
+    size_t Size();
+    void Push(RetiredPtr* ptr);
+    void ScanFreeList();
+    ~FreeList();
+
+private:
+    std::mutex scan_lock_;
+    std::atomic<size_t> size_{0};
+    std::atomic<RetiredPtr*> head_ = nullptr;
+};
+
+extern FreeList free_list;
 
 template <class T, class Deleter = std::default_delete<T>>
 void Retire(T* ptr) {
@@ -52,10 +62,9 @@ void Retire(T* ptr) {
         Deleter deleter;
         deleter(reinterpret_cast<T*>(ptr));
     };
-    auto new_free_list = new RetiredPtr(ptr, lambda_deleter, free_list.load());
-    FreeListPush(new_free_list);
-    approximate_free_list_size.fetch_add(1);
-    if (approximate_free_list_size.load() > kFreeListScanSize) {
-        ScanFreeList();
+    auto new_head = new RetiredPtr(ptr, lambda_deleter, nullptr);
+    free_list.Push(new_head);
+    if (free_list.Size() > FreeList::kFreeListScanSize) {
+        free_list.ScanFreeList();
     }
 }
