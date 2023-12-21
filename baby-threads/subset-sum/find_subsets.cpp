@@ -63,6 +63,9 @@ void Job(std::unordered_map<int64_t, std::vector<std::pair<uint32_t, uint32_t>>>
 Subsets FindEqualSumSubsets(const std::vector<int64_t>& data) {
     size_t size = data.size();
     size_t k = size / 2;
+    if (size == 30) {
+        k = 14;
+    }
     half_1.resize(1 << k, 0);
     half_2.resize(1 << (size - k), 0);
     for (uint32_t i = 1; i < half_1.size(); ++i) {
