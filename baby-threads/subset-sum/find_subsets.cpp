@@ -82,6 +82,7 @@ Subsets FindEqualSumSubsets(const std::vector<int64_t>& data) {
     }
     std::atomic<bool> exists = false;
     Subsets result;
+    result.exists = false;
     std::vector<std::thread> workers;
     for (int i = 0; i < threads_count; ++i) {
         workers.emplace_back(Job, &m, &exists, k, &result, i);
