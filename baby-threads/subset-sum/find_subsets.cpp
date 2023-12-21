@@ -5,12 +5,30 @@
 #include <atomic>
 #include <thread>
 
-int threads_count = std::thread::hardware_concurrency(); // std::thread::hardware_concurrency();
+int threads_count = std::thread::hardware_concurrency();  // std::thread::hardware_concurrency();
 std::vector<int64_t> half_1;
 std::vector<int64_t> half_2;
 
 int Log(uint32_t n) {
     return sizeof(n) * __CHAR_BIT__ - 1 - __builtin_clz(n);
+}
+
+Subsets CreateSubsets(uint32_t first, uint32_t second) {
+    Subsets result;
+    result.exists = true;
+    for (size_t i = 0; first != 0; ++i) {
+        if (first & 1) {
+            result.first_indices.emplace_back(i);
+        }
+        first >>= 1;
+    }
+    for (size_t i = 0; second != 0; ++i) {
+        if (second & 1) {
+            result.second_indices.emplace_back(i);
+        }
+        second >>= 1;
+    }
+    return result;
 }
 
 void Job(std::unordered_map<int64_t, std::vector<std::pair<uint32_t, uint32_t>>>* m,
@@ -27,17 +45,15 @@ void Job(std::unordered_map<int64_t, std::vector<std::pair<uint32_t, uint32_t>>>
             if (!m->contains(key)) {
                 continue;
             }
-            for (auto [i_o, j_o] :
-                 m->operator[](key)) {
-                if (half_2[i] + half_1[i_o] !=
-                    half_2[j] + half_1[j_o]) {
+            for (auto [i_o, j_o] : m->operator[](key)) {
+                if (half_2[i] + half_1[i_o] != half_2[j] + half_1[j_o]) {
                     std::swap(i_o, j_o);
                 }
                 if ((i_o == 0 && i == 0) || (j_o == 0 && j == 0)) {
                     continue;
                 }
                 if (!exists->exchange(true)) {
-                    *result = Subsets((i << k) + i_o, (j << k) + j_o);
+                    *result = CreateSubsets((i << k) + i_o, (j << k) + j_o);
                 }
             }
         }
@@ -73,6 +89,5 @@ Subsets FindEqualSumSubsets(const std::vector<int64_t>& data) {
     for (int i = 0; i < threads_count; ++i) {
         workers[i].join();
     }
-    int z = 1 + 1;
     return result;
 }
