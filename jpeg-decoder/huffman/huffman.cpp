@@ -68,7 +68,7 @@ private:
         std::unique_ptr<Node> result = std::make_unique<Node>();
         if (cl == current_cl_index + 1) {
             --code_lengths[current_cl_index];
-            while (code_lengths[current_cl_index] == 0) {
+            while (current_cl_index < code_lengths.size() && code_lengths[current_cl_index] == 0) {
                 ++current_cl_index;
             }
             result->value = values[current_value_index];
