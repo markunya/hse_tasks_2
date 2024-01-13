@@ -166,7 +166,7 @@ private:
     void DoTask(std::shared_ptr<Task> task);
 
     std::atomic<bool> is_shut_downed_{false};
-    std::atomic<uint8_t> shut_downed_threads_;
+    std::atomic<uint8_t> shut_downed_threads_{0};
     std::condition_variable shutdown_complete_;
     std::vector<std::thread> workers_;
     std::queue<std::shared_ptr<Task>> ready_;
