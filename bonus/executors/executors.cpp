@@ -52,12 +52,16 @@ void Task::Cancel() {
                 task->can_be_done_.store(true);
             }
         }
+        dependent_on_me_.clear();
         for (auto task : triggered_by_me_) {
             task->can_be_done_.store(true);
         }
-        auto guard = std::unique_lock{global};
+        triggered_by_me_.clear();
+        {
+            auto guard = std::unique_lock{global};
+            have_job.notify_one();
+        }
         auto task_guard = std::unique_lock{task_mutex_};
-        have_job.notify_one();
         done_.notify_all();
     }
 }
@@ -65,7 +69,7 @@ void Task::Cancel() {
 void Task::Wait() {
     auto task_guard = std::unique_lock{task_mutex_};
     while (!IsFinished()) {
-        //done_.wait(task_guard);
+        done_.wait(task_guard);
     }
 }
 
@@ -95,6 +99,10 @@ Executor::Executor(size_t num_of_threads) {
 }
 
 void Executor::Submit(std::shared_ptr<Task> task) {
+    if (is_shut_downed_.load()) {
+        task->Cancel();
+        return;
+    }
     auto guard = std::unique_lock{Task::global};
     if (task->can_be_done_.load() ||
         (task->deadline_ < std::chrono::system_clock::now() &&
@@ -178,7 +186,6 @@ void Executor::TakeTask() {
 
 void Executor::DoTask(std::shared_ptr<Task> task) {
     if (task->is_canceled_.load()) {
-        NotifyTask(task);
         return;
     }
     try {
@@ -194,10 +201,6 @@ void Executor::DoTask(std::shared_ptr<Task> task) {
 }
 
 void Executor::NotifyTask(std::shared_ptr<Task> task) {
-    {
-        auto task_guard = std::unique_lock{task->task_mutex_};
-        task->done_.notify_all();
-    }
     auto guard = std::unique_lock{Task::global};
     for (auto i : task->triggered_by_me_) {
         if (i->can_be_done_.load()) {
@@ -219,6 +222,8 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
     }
     task->dependent_on_me_.clear();
     task->SetWhenFinished(std::chrono::system_clock::now());
+    auto task_guard = std::unique_lock{task->task_mutex_};
+    task->done_.notify_all();
 }
 
 Executor::~Executor() {
