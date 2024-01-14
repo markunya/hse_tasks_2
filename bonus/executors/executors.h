@@ -97,7 +97,7 @@ public:
     template <class Y, class T>
     FuturePtr<Y> Then(FuturePtr<T> input, std::function<Y()> fn) {
         auto task = std::make_shared<Future<Y>>();
-        task->Set(fn);
+        task->Set(std::move(fn));
         task->AddDependency(input);
         Submit(task);
         return task;
@@ -169,7 +169,7 @@ private:
     std::atomic<uint8_t> shut_downed_threads_{0};
     std::condition_variable shutdown_complete_;
     std::vector<std::thread> workers_;
-    std::queue<std::shared_ptr<Task>, std::list<std::shared_ptr<Task>>> ready_;
+    std::queue<std::shared_ptr<Task>> ready_;
     std::priority_queue<std::shared_ptr<Task>, std::vector<std::shared_ptr<Task>>,
                         decltype([](std::shared_ptr<Task> first, std::shared_ptr<Task> second) {
                             return first->deadline_ > second->deadline_;

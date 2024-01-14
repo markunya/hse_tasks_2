@@ -107,6 +107,7 @@ void Executor::Submit(std::shared_ptr<Task> task) {
     if (task->can_be_done_.load() ||
         (task->deadline_ < std::chrono::system_clock::now() &&
          task->deadline_ != std::numeric_limits<std::chrono::system_clock::time_point>::min())) {
+        task->can_be_done_.store(true);
         ready_.push(task);
         Task::have_job.notify_one();
         return;
@@ -152,15 +153,15 @@ void Executor::TakeTask() {
         auto it = tasks_.begin();
         while (it != tasks_.end()) {
             auto current = it++;
-            if ((*current)->can_be_done_) {
-                auto task_mb_next = (*current);
+            if ((*current)->can_be_done_.load()) {
+                auto task_mb_next = std::move(*current);
                 tasks_.erase(current);
                 ready_.push(task_mb_next);
                 Task::have_job.notify_one();
             }
         }
         if (!ready_.empty()) {
-            task = ready_.front();
+            task = std::move(ready_.front());
             ready_.pop();
         }
         if (!task) {
