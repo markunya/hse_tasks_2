@@ -258,6 +258,8 @@ void Executor::WaitShutdown() {
 
 Executor::~Executor() {
     StartShutdown();
+    WaitShutdown();
+    auto guard = std::unique_lock{Task::global};
     while (!workers_.empty()) {
         workers_.back().join();
         workers_.pop_back();
