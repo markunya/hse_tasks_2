@@ -99,11 +99,12 @@ Executor::Executor(size_t num_of_threads) {
 }
 
 void Executor::Submit(std::shared_ptr<Task> task) {
+    auto guard = std::unique_lock{Task::global};
     if (is_shut_downed_.load()) {
+        guard.unlock();
         task->Cancel();
         return;
     }
-    auto guard = std::unique_lock{Task::global};
     if (task->can_be_done_.load() ||
         (task->deadline_ < std::chrono::system_clock::now() &&
          task->deadline_ != std::numeric_limits<std::chrono::system_clock::time_point>::min())) {
@@ -118,26 +119,6 @@ void Executor::Submit(std::shared_ptr<Task> task) {
     }
     tasks_.emplace_back(task);
     Task::have_job.notify_one();
-}
-
-void Executor::StartShutdown() {
-    is_shut_downed_.store(true);
-    auto guard = std::unique_lock{Task::global};
-    while (!ready_.empty()) {
-        ready_.pop();
-    }
-    while (!timer_heap_.empty()) {
-        timer_heap_.pop();
-    }
-    tasks_.clear();
-    Task::have_job.notify_all();
-}
-
-void Executor::WaitShutdown() {
-    auto guard = std::unique_lock{Task::global};
-    while (shut_downed_threads_ < workers_.size()) {
-        shutdown_complete_.wait(guard);
-    }
 }
 
 void Executor::TakeTask() {
@@ -165,14 +146,12 @@ void Executor::TakeTask() {
             ready_.pop();
         }
         if (!task) {
-            shut_downed_threads_.fetch_add(1);
             if (!timer_heap_.empty()) {
                 auto at = timer_heap_.top()->deadline_;
                 Task::have_job.wait_until(guard, at);
             } else {
                 Task::have_job.wait(guard);
             }
-            shut_downed_threads_.fetch_sub(1);
             continue;
         }
         guard.unlock();
@@ -180,7 +159,7 @@ void Executor::TakeTask() {
         guard.lock();
     }
     shut_downed_threads_.fetch_add(1);
-    if (shut_downed_threads_ == workers_.size()) {
+    if (shut_downed_threads_.load() == workers_.size()) {
         shutdown_complete_.notify_all();
     }
 }
@@ -225,6 +204,29 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
     task->SetWhenFinished(std::chrono::system_clock::now());
     auto task_guard = std::unique_lock{task->task_mutex_};
     task->done_.notify_all();
+}
+
+void Executor::StartShutdown() {
+    auto guard = std::unique_lock{Task::global};
+    if (is_shut_downed_.load()) {
+        return;
+    }
+    is_shut_downed_.store(true);
+    while (!ready_.empty()) {
+        ready_.pop();
+    }
+    while (!timer_heap_.empty()) {
+        timer_heap_.pop();
+    }
+    tasks_.clear();
+    Task::have_job.notify_all();
+}
+
+void Executor::WaitShutdown() {
+    auto guard = std::unique_lock{Task::global};
+    while (shut_downed_threads_.load() < workers_.size()) {
+        shutdown_complete_.wait(guard);
+    }
 }
 
 Executor::~Executor() {
