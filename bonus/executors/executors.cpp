@@ -158,7 +158,8 @@ void Executor::TakeTask() {
         if (!task) {
             shut_downed_threads_.fetch_add(1);
             if (!timer_heap_.empty()) {
-                Task::have_job.wait_until(guard, timer_heap_.top()->deadline_);
+                auto at = timer_heap_.top()->deadline_;
+                Task::have_job.wait_until(guard, at);
             } else {
                 Task::have_job.wait(guard);
             }
