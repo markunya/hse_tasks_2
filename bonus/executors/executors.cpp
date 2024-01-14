@@ -207,6 +207,7 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
         i->triggered_by_.store(task->id_);
         Task::have_job.notify_one();
     }
+    task->triggered_by_me_.clear();
     for (auto i : task->dependent_on_me_) {
         if (i->can_be_done_.load()) {
             continue;
@@ -216,6 +217,7 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
             Task::have_job.notify_one();
         }
     }
+    task->dependent_on_me_.clear();
     task->SetWhenFinished(std::chrono::system_clock::now());
 }
 
