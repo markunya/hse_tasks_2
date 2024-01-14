@@ -121,26 +121,29 @@ Executor::Executor(size_t num_of_threads) {
 }
 
 void Executor::Submit(std::shared_ptr<Task> task) {
-    auto guard = std::unique_lock{Task::global};
-    if (is_shut_downed_) {
-        guard.unlock();
-        task->Cancel();
-        return;
+    {
+        auto guard = std::unique_lock{Task::global};
+        if (!is_shut_downed_) {
+            if (task->can_be_done_.load() ||
+                (task->deadline_ < std::chrono::system_clock::now() &&
+                 task->deadline_ !=
+                     std::numeric_limits<std::chrono::system_clock::time_point>::min())) {
+                task->can_be_done_.store(true);
+                ready_.push(task);
+                Task::have_job.notify_one();
+                return;
+            }
+            if (task->deadline_ !=
+                std::numeric_limits<std::chrono::system_clock::time_point>::min()) {
+                timer_heap_.push(task);
+                Task::have_job.notify_one();
+            }
+            tasks_.emplace_back(task);
+            Task::have_job.notify_one();
+            return;
+        }
     }
-    if (task->can_be_done_.load() ||
-        (task->deadline_ < std::chrono::system_clock::now() &&
-         task->deadline_ != std::numeric_limits<std::chrono::system_clock::time_point>::min())) {
-        task->can_be_done_.store(true);
-        ready_.push(task);
-        Task::have_job.notify_one();
-        return;
-    }
-    if (task->deadline_ != std::numeric_limits<std::chrono::system_clock::time_point>::min()) {
-        timer_heap_.push(task);
-        Task::have_job.notify_one();
-    }
-    tasks_.emplace_back(task);
-    Task::have_job.notify_one();
+    task->Cancel();
 }
 
 void Executor::TakeTask() {
@@ -187,7 +190,7 @@ void Executor::TakeTask() {
 }
 
 void Executor::DoTask(std::shared_ptr<Task> task) {
-    if (task->is_canceled_.load()) {
+    if (task->IsCanceled()) {
         return;
     }
     try {
