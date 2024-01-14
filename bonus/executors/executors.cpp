@@ -41,6 +41,7 @@ std::exception_ptr Task::GetError() {
 }
 
 void Task::Cancel() {
+    auto guard = std::unique_lock{global};
     auto task_guard = std::unique_lock{task_mutex_};
     bool t = false;
     if (is_canceled_.compare_exchange_strong(t, true)) {
@@ -56,7 +57,6 @@ void Task::Cancel() {
         }
         triggered_by_me_.clear();
         done_.notify_all();
-        auto guard = std::unique_lock{global};
         have_job.notify_one();
     }
 }
