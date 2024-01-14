@@ -65,7 +65,7 @@ void Task::Cancel() {
 void Task::Wait() {
     auto task_guard = std::unique_lock{task_mutex_};
     while (!IsFinished()) {
-        done_.wait(task_guard);
+        //done_.wait(task_guard);
     }
 }
 
