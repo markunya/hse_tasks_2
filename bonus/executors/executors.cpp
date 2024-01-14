@@ -8,14 +8,11 @@ Task::Task() {
 }
 
 void Task::AddDependency(std::shared_ptr<Task> task) {
-    task->dependent_on_me_.emplace_back(shared_from_this());
-    need_dependencies_.fetch_add(1);
-    can_be_done_.store(false);
+    task->PushInDependentOnMe(shared_from_this());
 }
 
 void Task::AddTrigger(std::shared_ptr<Task> task) {
-    task->triggered_by_me_.emplace_back(shared_from_this());
-    can_be_done_.store(false);
+    task->PushInTriggeredByMe(shared_from_this());
 }
 
 void Task::SetTimeTrigger(std::chrono::system_clock::time_point at) {
@@ -44,6 +41,7 @@ std::exception_ptr Task::GetError() {
 }
 
 void Task::Cancel() {
+    auto task_guard = std::unique_lock{task_mutex_};
     bool t = false;
     if (is_canceled_.compare_exchange_strong(t, true)) {
         for (auto task : dependent_on_me_) {
@@ -57,12 +55,9 @@ void Task::Cancel() {
             task->can_be_done_.store(true);
         }
         triggered_by_me_.clear();
-        {
-            auto guard = std::unique_lock{global};
-            have_job.notify_one();
-        }
-        auto task_guard = std::unique_lock{task_mutex_};
         done_.notify_all();
+        auto guard = std::unique_lock{global};
+        have_job.notify_one();
     }
 }
 
@@ -86,7 +81,34 @@ bool Task::SubNeedDependencies() {
     return false;
 }
 
+void Task::PushInTriggeredByMe(std::shared_ptr<Task> task) {
+    auto guard = std::unique_lock{task_mutex_};
+    if (IsFinished()) {
+        task->can_be_done_.store(true);
+        if (task->triggered_by_ == 0) {
+            task->triggered_by_ = id_;
+        }
+        return;
+    }
+    triggered_by_me_.emplace_back(task);
+    task->can_be_done_.store(false);
+}
+
+void Task::PushInDependentOnMe(std::shared_ptr<Task> task) {
+    auto guard = std::unique_lock{task_mutex_};
+    if (IsFinished()) {
+        return;
+    }
+    dependent_on_me_.emplace_back(task);
+    task->need_dependencies_.fetch_add(1);
+    task->can_be_done_.store(false);
+}
+
 void Task::SetWhenFinished(std::chrono::system_clock::time_point at) {
+}
+
+std::optional<std::chrono::system_clock::time_point> Task::GetWhenFinished() {
+    return std::nullopt;
 }
 
 Task::~Task() = default;
@@ -100,7 +122,7 @@ Executor::Executor(size_t num_of_threads) {
 
 void Executor::Submit(std::shared_ptr<Task> task) {
     auto guard = std::unique_lock{Task::global};
-    if (is_shut_downed_.load()) {
+    if (is_shut_downed_) {
         guard.unlock();
         task->Cancel();
         return;
@@ -123,7 +145,7 @@ void Executor::Submit(std::shared_ptr<Task> task) {
 
 void Executor::TakeTask() {
     auto guard = std::unique_lock{Task::global};
-    while (!is_shut_downed_.load()) {
+    while (!is_shut_downed_) {
         std::shared_ptr<Task> task;
         while (!timer_heap_.empty() &&
                (timer_heap_.top()->deadline_ < std::chrono::system_clock::now() ||
@@ -158,8 +180,8 @@ void Executor::TakeTask() {
         DoTask(task);
         guard.lock();
     }
-    shut_downed_threads_.fetch_add(1);
-    if (shut_downed_threads_.load() == workers_.size()) {
+    ++shut_downed_threads_;
+    if (shut_downed_threads_ == workers_.size()) {
         shutdown_complete_.notify_all();
     }
 }
@@ -182,12 +204,15 @@ void Executor::DoTask(std::shared_ptr<Task> task) {
 
 void Executor::NotifyTask(std::shared_ptr<Task> task) {
     auto guard = std::unique_lock{Task::global};
+    auto task_guard = std::unique_lock{task->task_mutex_};
     for (auto i : task->triggered_by_me_) {
         if (i->can_be_done_.load()) {
             continue;
         }
         i->can_be_done_.store(true);
-        i->triggered_by_.store(task->id_);
+        if (i->triggered_by_ == 0) {
+            i->triggered_by_ = task->id_;
+        }
         Task::have_job.notify_one();
     }
     task->triggered_by_me_.clear();
@@ -202,16 +227,15 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
     }
     task->dependent_on_me_.clear();
     task->SetWhenFinished(std::chrono::system_clock::now());
-    auto task_guard = std::unique_lock{task->task_mutex_};
     task->done_.notify_all();
 }
 
 void Executor::StartShutdown() {
     auto guard = std::unique_lock{Task::global};
-    if (is_shut_downed_.load()) {
+    if (is_shut_downed_) {
         return;
     }
-    is_shut_downed_.store(true);
+    is_shut_downed_ = true;
     while (!ready_.empty()) {
         ready_.pop();
     }
@@ -224,7 +248,7 @@ void Executor::StartShutdown() {
 
 void Executor::WaitShutdown() {
     auto guard = std::unique_lock{Task::global};
-    while (shut_downed_threads_.load() < workers_.size()) {
+    while (shut_downed_threads_ < workers_.size()) {
         shutdown_complete_.wait(guard);
     }
 }

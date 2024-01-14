@@ -47,7 +47,12 @@ private:
 
     bool SubNeedDependencies();
 
+    void PushInDependentOnMe(std::shared_ptr<Task> task);
+
+    void PushInTriggeredByMe(std::shared_ptr<Task> task);
+
     virtual void SetWhenFinished(std::chrono::system_clock::time_point at);
+    virtual std::optional<std::chrono::system_clock::time_point> GetWhenFinished();
 
     std::mutex task_mutex_;
     std::condition_variable done_;
@@ -55,7 +60,7 @@ private:
     inline static std::condition_variable have_job;
 
     size_t id_ = 0;
-    std::atomic<size_t> triggered_by_{0};
+    size_t triggered_by_ = 0;
     std::atomic<size_t> need_dependencies_ = 0;
     std::atomic<bool> can_be_done_{true};
     std::atomic<bool> is_completed_{false};
@@ -165,8 +170,8 @@ private:
 
     void DoTask(std::shared_ptr<Task> task);
 
-    std::atomic<bool> is_shut_downed_{false};
-    std::atomic<uint8_t> shut_downed_threads_{0};
+    bool is_shut_downed_ = false;
+    uint8_t shut_downed_threads_ = 0;
     std::condition_variable shutdown_complete_;
     std::vector<std::thread> workers_;
     std::queue<std::shared_ptr<Task>, std::list<std::shared_ptr<Task>>> ready_;
@@ -185,6 +190,8 @@ class Future : public Task {
 public:
     T Get();
 
+    std::optional<std::chrono::system_clock::time_point> GetWhenFinished() override;
+
 private:
     friend class Executor;
 
@@ -194,21 +201,18 @@ private:
 
     void SetWhenFinished(std::chrono::system_clock::time_point at) override;
 
-    std::mutex m_;
     std::function<T()> fn_;
-
-    std::condition_variable data_loaded_;
     std::chrono::system_clock::time_point finished_at_ =
         std::chrono::time_point<std::chrono::system_clock>::max();
     std::optional<T> data_ = std::nullopt;
-    std::exception_ptr error_ = nullptr;
 };
 
 template <class T>
 T Future<T>::Get() {
     Wait();
-    if (error_) {
-        std::rethrow_exception(error_);
+    std::exception_ptr error = GetError();
+    if (error) {
+        std::rethrow_exception(error);
     }
     return data_.value();
 }
@@ -220,15 +224,18 @@ void Future<T>::Set(std::function<T()> fn) {
 
 template <typename T>
 void Future<T>::Run() {
-    try {
-        data_ = std::invoke(fn_);
-    } catch (...) {
-        error_ = std::current_exception();
-    }
-    data_loaded_.notify_all();
+    data_ = std::invoke(fn_);
 }
 
 template <class T>
 void Future<T>::SetWhenFinished(std::chrono::system_clock::time_point at) {
     finished_at_ = at;
+}
+
+template <class T>
+std::optional<std::chrono::system_clock::time_point> Future<T>::GetWhenFinished() {
+    if (!IsFinished()) {
+        return std::nullopt;
+    }
+    return finished_at_;
 }
