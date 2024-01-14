@@ -43,17 +43,19 @@ std::exception_ptr Task::GetError() {
 void Task::Cancel() {
     auto guard = std::unique_lock{global};
     auto task_guard = std::unique_lock{task_mutex_};
-    bool t = false;
-    if (is_canceled_.compare_exchange_strong(t, true)) {
+    if (!IsCanceled()) {
+        is_canceled_.store(true);
         for (auto task : dependent_on_me_) {
             task->need_dependencies_.fetch_sub(1);
             if (task->need_dependencies_.load() == 0) {
                 task->can_be_done_.store(true);
             }
+            task.reset();
         }
         dependent_on_me_.clear();
         for (auto task : triggered_by_me_) {
             task->can_be_done_.store(true);
+            task.reset();
         }
         triggered_by_me_.clear();
         done_.notify_all();
@@ -216,6 +218,7 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
         if (i->triggered_by_ == 0) {
             i->triggered_by_ = task->id_;
         }
+        i.reset();
         Task::have_job.notify_one();
     }
     task->triggered_by_me_.clear();
@@ -227,6 +230,7 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
             i->can_be_done_.store(true);
             Task::have_job.notify_one();
         }
+        i.reset();
     }
     task->dependent_on_me_.clear();
     task->SetWhenFinished(std::chrono::system_clock::now());
@@ -260,9 +264,8 @@ Executor::~Executor() {
     StartShutdown();
     WaitShutdown();
     auto guard = std::unique_lock{Task::global};
-    while (!workers_.empty()) {
-        workers_.back().join();
-        workers_.pop_back();
+    for (auto& worker : workers_) {
+        worker.join();
     }
 }
 
