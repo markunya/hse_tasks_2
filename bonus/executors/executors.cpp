@@ -194,11 +194,11 @@ void Executor::DoTask(std::shared_ptr<Task> task) {
     } catch (...) {
         task->error_ = std::current_exception();
         task->is_failed_.store(true);
-        NotifyTask(task);
+        NotifyTask(std::move(task));
         return;
     }
     task->is_completed_.store(true);
-    NotifyTask(task);
+    NotifyTask(std::move(task));
 }
 
 void Executor::NotifyTask(std::shared_ptr<Task> task) {
@@ -229,8 +229,9 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
 
 Executor::~Executor() {
     StartShutdown();
-    for (auto& worker : workers_) {
-        worker.join();
+    while (!workers_.empty()) {
+        workers_.back().join();
+        workers_.pop_back();
     }
 }
 
