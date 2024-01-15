@@ -50,12 +50,10 @@ void Task::Cancel() {
             if (task->need_dependencies_.load() == 0) {
                 task->can_be_done_.store(true);
             }
-            task.reset();
         }
         dependent_on_me_.clear();
         for (auto task : triggered_by_me_) {
             task->can_be_done_.store(true);
-            task.reset();
         }
         triggered_by_me_.clear();
         done_.notify_all();
@@ -218,7 +216,6 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
         if (i->triggered_by_ == 0) {
             i->triggered_by_ = task->id_;
         }
-        i.reset();
         Task::have_job.notify_one();
     }
     task->triggered_by_me_.clear();
@@ -230,7 +227,6 @@ void Executor::NotifyTask(std::shared_ptr<Task> task) {
             i->can_be_done_.store(true);
             Task::have_job.notify_one();
         }
-        i.reset();
     }
     task->dependent_on_me_.clear();
     task->SetWhenFinished(std::chrono::system_clock::now());
